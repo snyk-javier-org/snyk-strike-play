@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SNYK STRIKE — Play Online</title>
+<meta name="description" content="SNYK STRIKE — a neon arcade game where you strike down code vulnerabilities. Play online.">
+<style>
+  :root{
+    --bg:#06061a; --green:#39FF14; --magenta:#E040FB; --cyan:#00FFFF;
+    --orange:#FF6B35; --red:#FF2050; --ink:#cfcfe8;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:
+      radial-gradient(circle at 50% -10%, rgba(224,64,251,0.20), transparent 55%),
+      repeating-linear-gradient(0deg, transparent, transparent 38px, rgba(0,255,255,0.04) 39px, transparent 40px),
+      var(--bg);
+    color:var(--ink);
+    font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:100vh; text-align:center; padding:24px; gap:8px;
+  }
+  h1{
+    font-size:clamp(38px,9vw,90px); letter-spacing:.08em; margin:0 0 4px;
+    color:#fff; text-shadow:0 0 8px var(--magenta),0 0 22px var(--magenta);
+  }
+  h1 .k{color:var(--green); text-shadow:0 0 8px var(--green),0 0 22px var(--green)}
+  p.tag{margin:0 0 30px; color:var(--cyan); letter-spacing:.22em; font-size:clamp(11px,2.4vw,15px); text-transform:uppercase}
+  .menu{display:flex; flex-direction:column; gap:16px; width:min(360px,90vw)}
+  a.btn{
+    display:block; text-decoration:none; padding:18px 22px; font-size:20px; letter-spacing:.12em;
+    color:#06061a; font-weight:700; text-transform:uppercase; border-radius:10px;
+    background:linear-gradient(90deg,var(--orange),var(--magenta));
+    box-shadow:0 0 18px rgba(224,64,251,0.55); transition:transform .12s ease, box-shadow .12s ease;
+  }
+  a.btn.alt{background:transparent; color:var(--cyan); border:2px solid var(--cyan); box-shadow:0 0 14px rgba(0,255,255,0.35)}
+  a.btn:hover{transform:translateY(-2px) scale(1.02); box-shadow:0 0 28px rgba(224,64,251,0.8)}
+  footer{margin-top:34px; font-size:11px; letter-spacing:.16em; color:#6a6a8a; text-transform:uppercase}
+  footer a{color:#8a8ab0}
+</style>
+</head>
+<body>
+  <h1>SNYK <span class="k">STRIKE</span></h1>
+  <p class="tag">Strike down the vulnerabilities</p>
+  <nav class="menu">
+    <a class="btn" id="play" href="./snyk-strike.html">▶ Play Game</a>
+    <a class="btn alt" id="leaderboard" href="./leaderboard.html">🏆 Leaderboard</a>
+  </nav>
+  <footer>Snyk Marketing · Internal · <a href="https://github.com/snyk-marketing/snyk-strike">source</a></footer>
+</body>
+</html>
