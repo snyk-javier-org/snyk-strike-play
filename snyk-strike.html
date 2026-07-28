@@ -168,6 +168,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .code-header{display:flex;align-items:center;justify-content:space-between;padding:7px 14px;background:var(--bg3);border-bottom:3px solid var(--border2);flex-shrink:0;}
 .code-title{font-size:17px;color:var(--text-dim);letter-spacing:2px;display:flex;align-items:center;gap:7px;}
 .code-title::before{content:'● ● ●';color:var(--orange);font-size:18px;letter-spacing:4px;}
+.code-vuln-type{margin-right:auto;margin-left:14px;font-size:13px;font-weight:700;letter-spacing:1.5px;color:var(--magenta);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:52%;}
 .vuln-badge{font-size:16px;font-weight:700;color:#000;background:var(--orange);padding:3px 8px;border:2px solid rgba(255,255,255,0.2);box-shadow:2px 2px 0 rgba(0,0,0,0.5);opacity:0;transition:opacity 0.3s;letter-spacing:1px;text-shadow:none;}
 .vuln-badge.visible{opacity:1;animation:badgePop 0.3s cubic-bezier(0.34,1.56,0.64,1);}
 @keyframes badgePop{from{transform:scale(0);}to{transform:scale(1);}}
@@ -524,6 +525,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
       <div class="code-panel">
         <div class="code-header">
           <div class="code-title" id="filename">database.js</div>
+          <div class="code-vuln-type" id="code-vuln-type"></div>
           <div class="vuln-badge" id="vuln-badge">CRITICAL</div>
         </div>
         <div class="code-body" id="code-body"></div>
@@ -945,14 +947,31 @@ const CHALLENGE_POOL=[{"type":"SQL INJECTION","severity":"CRITICAL","filename":"
 
 // ── OFFLINE CHALLENGE PICKER ──────────────────────────────────
 // Pick N distinct challenges from the pool, avoiding recent repeats.
+const OWASP_INDEX={"SQL INJECTION":{"t10":"A03","t10n":"Injection","llm":"LLM05","llmn":"Improper Output Handling"},"NOSQL INJECTION":{"t10":"A03","t10n":"Injection","llm":"LLM05","llmn":"Improper Output Handling"},"COMMAND INJECTION":{"t10":"A03","t10n":"Injection","llm":"LLM05","llmn":"Improper Output Handling"},"CODE INJECTION (EVAL)":{"t10":"A03","t10n":"Injection","llm":"LLM05","llmn":"Improper Output Handling"},"CROSS-SITE SCRIPTING":{"t10":"A03","t10n":"Injection","llm":"LLM05","llmn":"Improper Output Handling"},"SERVER-SIDE TEMPLATE INJECTION":{"t10":"A03","t10n":"Injection","llm":"LLM05","llmn":"Improper Output Handling"},"MISSING INPUT VALIDATION":{"t10":"A03","t10n":"Injection"},"PATH TRAVERSAL":{"t10":"A01","t10n":"Broken Access Control"},"ZIP SLIP":{"t10":"A01","t10n":"Broken Access Control"},"INSECURE DIRECT OBJECT REFERENCE":{"t10":"A01","t10n":"Broken Access Control"},"OPEN REDIRECT":{"t10":"A01","t10n":"Broken Access Control"},"WEAK CRYPTOGRAPHY":{"t10":"A02","t10n":"Cryptographic Failures"},"WEAK PASSWORD HASH":{"t10":"A02","t10n":"Cryptographic Failures"},"PLAINTEXT PASSWORD STORAGE":{"t10":"A02","t10n":"Cryptographic Failures","llm":"LLM02","llmn":"Sensitive Information Disclosure"},"INSECURE RANDOMNESS":{"t10":"A02","t10n":"Cryptographic Failures"},"IMPROPER CERTIFICATE VALIDATION":{"t10":"A02","t10n":"Cryptographic Failures"},"REGEX DENIAL OF SERVICE (ReDoS)":{"t10":"A04","t10n":"Insecure Design","llm":"LLM10","llmn":"Unbounded Consumption"},"UNRESTRICTED FILE UPLOAD":{"t10":"A04","t10n":"Insecure Design"},"XML EXTERNAL ENTITY (XXE)":{"t10":"A05","t10n":"Security Misconfiguration"},"CORS MISCONFIGURATION":{"t10":"A05","t10n":"Security Misconfiguration"},"CLICKJACKING":{"t10":"A05","t10n":"Security Misconfiguration"},"INSECURE COOKIE":{"t10":"A05","t10n":"Security Misconfiguration"},"EXPOSED DEBUG ENDPOINT":{"t10":"A05","t10n":"Security Misconfiguration"},"EXPOSED API KEY":{"t10":"A07","t10n":"Identification & Authentication Failures","llm":"LLM02","llmn":"Sensitive Information Disclosure"},"HARDCODED CREDENTIAL":{"t10":"A07","t10n":"Identification & Authentication Failures","llm":"LLM02","llmn":"Sensitive Information Disclosure"},"HARDCODED SECRET":{"t10":"A07","t10n":"Identification & Authentication Failures","llm":"LLM02","llmn":"Sensitive Information Disclosure"},"BROKEN AUTHENTICATION":{"t10":"A07","t10n":"Identification & Authentication Failures"},"TIMING ATTACK":{"t10":"A07","t10n":"Identification & Authentication Failures"},"INSECURE DESERIALIZATION":{"t10":"A08","t10n":"Software & Data Integrity Failures","llm":"LLM04","llmn":"Data and Model Poisoning"},"PROTOTYPE POLLUTION":{"t10":"A08","t10n":"Software & Data Integrity Failures","llm":"LLM04","llmn":"Data and Model Poisoning"},"MASS ASSIGNMENT":{"t10":"A08","t10n":"Software & Data Integrity Failures"},"SENSITIVE DATA IN LOGS":{"t10":"A09","t10n":"Security Logging & Monitoring Failures","llm":"LLM02","llmn":"Sensitive Information Disclosure"},"SERVER-SIDE REQUEST FORGERY":{"t10":"A10","t10n":"Server-Side Request Forgery (SSRF)","llm":"LLM06","llmn":"Excessive Agency"},"SSRF":{"t10":"A10","t10n":"Server-Side Request Forgery (SSRF)","llm":"LLM06","llmn":"Excessive Agency"}};
+function owaspOf(ch){var m=OWASP_INDEX[ch.type];return m?m.t10:"A00";}
+function owaspLabel(ch){var m=OWASP_INDEX[ch.type];if(!m)return "";var s="OWASP "+m.t10+" "+m.t10n;if(m.llm)s+="  \u2022  OWASP-LLM "+m.llm+" "+m.llmn;return s;}
+// ── OFFLINE CHALLENGE PICKER (OWASP-balanced) ──────────────────
+// The raw pool is heavily skewed (A03 + A07 ~= 84%). Spread picks evenly
+// across OWASP Top 10 categories so players rotate through categories
+// instead of repeatedly seeing the same one.
 function pickChallenges(count){
   const picked=[];
+  const usedThisRound=new Set();
   let avail=CHALLENGE_POOL.filter(c=>!state.usedIds.includes(c.id));
   for(let i=0;i<count;i++){
     if(!avail.length){ state.usedIds=[]; avail=CHALLENGE_POOL.filter(c=>!picked.includes(c)); if(!avail.length)avail=[...CHALLENGE_POOL]; }
-    const ch=avail[Math.floor(Math.random()*avail.length)];
-    picked.push(ch);
+    const byCat={};
+    for(const c of avail){ const k=owaspOf(c); (byCat[k]||(byCat[k]=[])).push(c); }
+    let cats=Object.keys(byCat).filter(k=>!usedThisRound.has(k));
+    if(!cats.length) cats=Object.keys(byCat);
+    const minUse=Math.min(...cats.map(k=>state.catCounts[k]||0));
+    const tied=cats.filter(k=>(state.catCounts[k]||0)===minUse);
+    const cat=tied[Math.floor(Math.random()*tied.length)];
+    const bucket=byCat[cat];
+    const ch=bucket[Math.floor(Math.random()*bucket.length)];
+    picked.push(ch); usedThisRound.add(cat);
     state.usedIds.push(ch.id);
+    state.catCounts[cat]=(state.catCounts[cat]||0)+1;
     avail=avail.filter(c=>c!==ch);
   }
   if(state.usedIds.length>CHALLENGE_POOL.length*2)state.usedIds=state.usedIds.slice(-CHALLENGE_POOL.length);
@@ -961,14 +980,14 @@ function pickChallenges(count){
 
 
 // ── GAME STATE ────────────────────────────────────────────────
-let state={score:0,streak:0,level:0,round:0,currentChallenges:[],vulnStates:[],activeVulnIdx:0,vulnsToFix:0,vulnsFixed:0,roundVulnsFixed:0,falsePositives:0,roundXPItems:[],roundStartTime:0,usedIds:[],powerups:{scan:0,shield:1,freeze:0,evo:0},shieldActive:false,freezeActive:false,gameActive:false,step:1,toppedOut:false,lives:5,livesCap:5,loseReason:null};
+let state={score:0,streak:0,level:0,round:0,currentChallenges:[],vulnStates:[],activeVulnIdx:0,vulnsToFix:0,vulnsFixed:0,roundVulnsFixed:0,falsePositives:0,roundXPItems:[],roundStartTime:0,usedIds:[],catCounts:{},powerups:{scan:0,shield:1,freeze:0,evo:0},shieldActive:false,freezeActive:false,gameActive:false,step:1,toppedOut:false,lives:5,livesCap:5,loseReason:null};
 
 // ── LOAD CHALLENGE ────────────────────────────────────────────
 
 function startGame(){
   state={score:0,streak:0,level:0,round:0,currentChallenges:[],vulnStates:[],activeVulnIdx:0,
     vulnsToFix:0,vulnsFixed:0,roundVulnsFixed:0,falsePositives:0,roundXPItems:[],roundStartTime:0,
-    usedIds:[],powerups:{scan:0,shield:1,freeze:0,evo:0},shieldActive:false,freezeActive:false,
+    usedIds:[],catCounts:{},powerups:{scan:0,shield:1,freeze:0,evo:0},shieldActive:false,freezeActive:false,
     gameActive:true,step:1,toppedOut:false,lives:5,livesCap:5,loseReason:null};
   document.getElementById('attract').style.display='none';
   document.getElementById('game').style.display='flex';
@@ -1007,6 +1026,7 @@ function loadChallenge(){
   const lvlName=lvl.name;
   document.getElementById('level-badge').textContent='LVL '+(state.level+1);
   document.getElementById('filename').textContent=challenges[0].filename;
+  {const _vt=document.getElementById('code-vuln-type');if(_vt)_vt.textContent=challenges[0].type+' · OWASP '+owaspOf(challenges[0]);}
   document.getElementById('vuln-badge').textContent=challenges[0].severity;
   document.getElementById('vuln-badge').classList.remove('visible');
   document.getElementById('vuln-counter-label').textContent='VULN 1 OF '+vulnCount;
@@ -1121,7 +1141,7 @@ function flagVuln(vi){
 function openFixPanel(vi){
   const ch=state.currentChallenges[vi];
   document.getElementById('fix-title').textContent=ch.type;
-  const descEl=document.getElementById('fix-desc');if(descEl)descEl.textContent=ch.desc;
+  const descEl=document.getElementById('fix-desc');if(descEl)descEl.textContent=ch.desc+(owaspLabel(ch)?'  \u2022  '+owaspLabel(ch):'');
   const opts=document.getElementById('fix-options');opts.innerHTML='';
   const shuffled=[...ch.fixes].sort(()=>Math.random()-0.5);
   shuffled.forEach((fix,i)=>{
@@ -1188,6 +1208,7 @@ function applyFix(fixIdx){
         const nextCh=state.currentChallenges[nextVI];
         renderCode(nextCh.lines,nextVI);
         document.getElementById('filename').textContent=nextCh.filename;
+        {const _vt=document.getElementById('code-vuln-type');if(_vt)_vt.textContent=nextCh.type+' · OWASP '+owaspOf(nextCh);}
         document.getElementById('vuln-badge').textContent=nextCh.severity;
         document.getElementById('vuln-badge').classList.remove('visible');
         document.getElementById('vuln-counter-label').textContent='VULN '+(nextVI+1)+' OF '+state.vulnsToFix;
