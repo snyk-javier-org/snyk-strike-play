@@ -44,6 +44,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .menu-btn.practice{color:var(--green);text-shadow:0 0 10px var(--green);box-shadow:3px 3px 0 rgba(57,255,20,0.3);}
 .menu-btn.tutorial{color:var(--magenta);text-shadow:0 0 10px var(--magenta);box-shadow:3px 3px 0 rgba(224,64,251,0.3);}
 .menu-btn.leaderboard{color:var(--cyan);text-shadow:0 0 10px var(--cyan);box-shadow:3px 3px 0 rgba(0,255,255,0.3);}
+.insert-coin.kb-selected,.menu-btn.kb-selected{outline:3px solid #fff;outline-offset:4px;transform:translateY(-2px);}
 .learn-link{display:inline-block;margin-left:10px;font-size:11px;letter-spacing:1px;color:var(--cyan);text-decoration:none;border:1px solid var(--cyan);padding:2px 8px;vertical-align:middle;opacity:.85;flex:0 0 auto;}
 .learn-link:hover{opacity:1;box-shadow:0 0 10px rgba(0,255,255,.5);}
 .mute-btn{z-index:60;width:76px;height:76px;display:flex;align-items:center;justify-content:center;font-size:40px;line-height:1;cursor:pointer;background:var(--bg3);border:3px solid var(--cyan);box-shadow:3px 3px 0 rgba(0,255,255,0.35),0 0 14px rgba(0,255,255,0.4);text-shadow:0 0 12px rgba(0,255,255,0.7);user-select:none;transition:transform .1s ease,box-shadow .1s ease;}
@@ -1806,6 +1807,27 @@ document.addEventListener('keydown',function(e){
 
 updateAttract();
 SFX.initBtn();
+
+// Keyboard: ↑/↓ move between the attract-screen buttons, Enter activates.
+(function(){
+  function vis(id){var el=document.getElementById(id);return el&&getComputedStyle(el).display!=='none';}
+  function active(){return vis('attract')&&!vis('tutorial')&&!vis('game');}
+  document.addEventListener('keydown',function(e){
+    if(!active())return;
+    if(e.target&&e.target.tagName==='INPUT')return;
+    if(e.key!=='ArrowUp'&&e.key!=='ArrowDown'&&e.key!=='Enter')return;
+    var items=[].slice.call(document.querySelectorAll('#attract .insert-coin, #attract .menu-btn'));
+    if(!items.length)return;
+    e.preventDefault();
+    if(e.key==='Enter'){(items.filter(function(el){return el.classList.contains('kb-selected');})[0]||items[0]).click();return;}
+    var dir=e.key==='ArrowDown'?1:-1,cur=-1;
+    for(var i=0;i<items.length;i++){if(items[i].classList.contains('kb-selected')){cur=i;break;}}
+    if(cur<0)cur=dir>0?-1:0;
+    var next=(cur+dir+items.length)%items.length;
+    items.forEach(function(el){el.classList.remove('kb-selected');});
+    items[next].classList.add('kb-selected');
+  });
+})();
 
 
 // Scale the whole 1920x1080 design canvas to fit any window (16:9 or letterboxed).
