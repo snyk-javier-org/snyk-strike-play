@@ -278,6 +278,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .go-score{font-size:55px;color:var(--yellow);text-shadow:4px 4px 0 #AA9000;}
 .go-score-lbl{font-size:17px;color:var(--text-dim);letter-spacing:3px;}
 .go-vulns{font-size:18px;color:var(--magenta);text-shadow:0 0 10px var(--magenta);margin-bottom:6px;}
+.go-compare{font-size:19px;color:var(--cyan);text-shadow:0 0 10px rgba(0,255,255,0.4);max-width:820px;line-height:1.5;margin:2px auto 8px;padding:0 16px;}
 .lb-wrap{width:340px;}
 .lb-heading{font-size:18px;color:var(--yellow);text-align:center;margin-bottom:10px;letter-spacing:2px;text-shadow:2px 2px 0 #AA9000;}
 .lb-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:2px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:20px;}
@@ -603,6 +604,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
   <div class="go-score" id="go-score">0</div>
   <div class="go-score-lbl">TOTAL SCORE</div>
   <div class="go-vulns" id="go-vulns">0 vulns remediated</div>
+  <div class="go-compare" id="go-compare"></div>
   <div class="lb-wrap" id="leaderboard-display"></div>
   <div class="name-entry" id="name-entry">
     <input class="name-input" id="name-input" maxlength="10" placeholder="YOUR NAME"/>
@@ -1583,6 +1585,11 @@ function gameOver(){
       ? (state.vulnsFixed+' OF '+PRACTICE_SET.length+' PRACTICE VULNS FIXED')
       : ('LEVEL '+(state.level+1)+' REACHED  ·  '+state.vulnsFixed+' VULN'+(state.vulnsFixed!==1?'S':'')+' REMEDIATED');
     renderLeaderboard();
+    // Compare to today's global average + a funny nudge (real games only).
+    const gc=document.getElementById('go-compare');
+    if(practiceMode){ if(gc)gc.style.display='none'; }
+    else if(gc){ gc.style.display='block'; showCompare(0); }
+    if(!practiceMode) fetchBoard(function(d){ showCompare((d.today&&d.today.avg)||0); renderLeaderboard(d.alltime); });
     // Practice runs never register on the leaderboard.
     document.getElementById('name-entry').style.display=(!practiceMode && state.score>0)?'flex':'none';
     document.getElementById('game-over').style.display='flex';
@@ -1591,8 +1598,9 @@ function gameOver(){
   },400);
 }
 
-function renderLeaderboard(){
-  const lb=loadLeaderboard();const wrap=document.getElementById('leaderboard-display');
+function renderLeaderboard(list){
+  const lb=list||loadLeaderboard().slice().sort((a,b)=>(b.score||0)-(a.score||0));
+  const wrap=document.getElementById('leaderboard-display');
   if(!lb.length){wrap.innerHTML='<div class="lb-heading">NO SCORES YET</div>';return;}
   const rankCls=['gold','silver','bronze'];
   wrap.innerHTML='<div class="lb-heading">HIGH SCORES</div>'+lb.slice(0,7).map((e,i)=>
@@ -1603,19 +1611,35 @@ function renderLeaderboard(){
 function loadLeaderboard(){try{const s=localStorage.getItem('snyk_lb');return s?JSON.parse(s):[];}catch{return [];}}
 function saveLeaderboard(lb){try{localStorage.setItem('snyk_lb',JSON.stringify(lb));}catch{}}
 
+// Global leaderboard API (Render). The game runs on GitHub Pages and calls this
+// cross-origin; every read falls back to local scores if the API is unreachable.
+var LB_API='https://snyk-strike-api.onrender.com';
+function fetchBoard(cb){
+  fetch(LB_API+'/api/leaderboard',{cache:'no-store'})
+    .then(function(r){return r.ok?r.json():Promise.reject();}).then(cb).catch(function(){});
+}
+// Funny + encouraging line based on how you did vs today's average.
+function encourage(score,avg){
+  if(!avg||avg<=0) return '🏁 First run on the board today — you just set the pace. Now defend it!';
+  var r=score/avg;
+  if(r>=2)   return '🔥 '+ (Math.round(r*10)/10) +'× today’s average — you don’t fix vulns, they flee. Snyk’s hiring, just saying.';
+  if(r>=1.2) return '🚀 Well above today’s average — your commits smell like victory. Go flex on the next player.';
+  if(r>=1)   return '✅ Above today’s average — certified vuln-crusher. One more run to pull ahead?';
+  if(r>=0.6) return '😤 Just shy of today’s average — so close you can taste the merge. Run it back!';
+  return '💥 Below today’s average, but even Log4j had a rough decade. Hit PLAY AGAIN and redeem yourself.';
+}
+function showCompare(avg){
+  var el=document.getElementById('go-compare'); if(!el)return;
+  el.textContent=(avg>0?('YOU '+state.score.toLocaleString()+' · TODAY’S AVG '+avg.toLocaleString()+' — '):'')+encourage(state.score,avg);
+}
+
 // Pacific-time (America/Los_Angeles) day/week boundaries — same logic the
 // leaderboard uses, so the attract-screen leaders match the dashboards.
 function laParts(ts){var o={};new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',hour12:false,weekday:'short',hour:'2-digit',minute:'2-digit',second:'2-digit'}).formatToParts(new Date(ts)).forEach(function(p){o[p.type]=p.value;});return o;}
 function laStartOfDay(ts){var o=laParts(ts);var secs=(parseInt(o.hour,10)%24)*3600+parseInt(o.minute,10)*60+parseInt(o.second,10);return ts-secs*1000;}
 function laStartOfWeek(ts){var d=laStartOfDay(ts),g=0;while(laParts(d).weekday!=='Sun'&&g++<8){d=laStartOfDay(d-3600000);}return d;}
 
-function updateAttract(){
-  const lb=loadLeaderboard();
-  const now=Date.now(), dayStart=laStartOfDay(now), weekStart=laStartOfWeek(now);
-  const sorted=lb.slice().sort((a,b)=>(b.score||0)-(a.score||0));
-  const day=sorted.find(e=>typeof e.date==='number'&&e.date>=dayStart);
-  const week=sorted.find(e=>typeof e.date==='number'&&e.date>=weekStart);
-  const all=sorted[0];
+function fillAttract(day,week,all){
   function fill(numId,nameId,e){
     const n=document.getElementById(numId), nm=document.getElementById(nameId);
     if(!n)return;
@@ -1626,14 +1650,30 @@ function updateAttract(){
   fill('hi-week','hi-week-name',week);
   fill('hi-all','hi-all-name',all);
 }
+function updateAttract(){
+  // Local first (instant, offline-safe)…
+  const lb=loadLeaderboard();
+  const now=Date.now(), dayStart=laStartOfDay(now), weekStart=laStartOfWeek(now);
+  const sorted=lb.slice().sort((a,b)=>(b.score||0)-(a.score||0));
+  fillAttract(
+    sorted.find(e=>typeof e.date==='number'&&e.date>=dayStart),
+    sorted.find(e=>typeof e.date==='number'&&e.date>=weekStart),
+    sorted[0]);
+  // …then the global boards.
+  fetchBoard(function(d){ fillAttract((d.daily||[])[0],(d.weekly||[])[0],(d.alltime||[])[0]); });
+}
 
 function submitScore(){
   if(practiceMode)return;   // practice runs never register on the leaderboard
   const name=document.getElementById('name-input').value.trim().toUpperCase()||'ANON';
+  const vulns=state.vulnsFixed, score=state.score;
   const lb=loadLeaderboard();
-  lb.push({name,score:state.score,vulns:state.vulnsFixed,date:Date.now()});
-  lb.sort((a,b)=>b.score-a.score);lb.splice(500);   // keep enough history for the daily/weekly boards
+  lb.push({name,score,vulns,date:Date.now()});
+  lb.sort((a,b)=>b.score-a.score);lb.splice(500);   // local cache / offline fallback
   saveLeaderboard(lb);
+  // Submit to the global board, then refresh from it.
+  fetch(LB_API+'/api/scores',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,score,vulns})})
+    .then(function(){ fetchBoard(function(d){ renderLeaderboard(d.alltime); }); }).catch(function(){});
   SFX.submit();
   document.getElementById('name-entry').style.display='none';
   renderLeaderboard();updateAttract();
@@ -1820,7 +1860,7 @@ updateAttract();
 SFX.initBtn();
 
 // App version (MAJOR.MINOR.YYYYMMDDHHMM in PST) — keep in sync with package.json.
-var APP_VERSION='1.0.202607300721';
+var APP_VERSION='1.1.202607300801';
 {var _v=document.getElementById('app-version');if(_v)_v.textContent='v'+APP_VERSION;}
 
 // Keyboard: ↑/↓ move between the attract-screen buttons, Enter activates.

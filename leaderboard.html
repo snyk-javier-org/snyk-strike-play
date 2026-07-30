@@ -54,6 +54,7 @@ html,body{width:100%;height:100%;background:#000;overflow:hidden;font-family:'Pr
 @keyframes kick{50%{opacity:.62;}}
 .kicker .ar{color:var(--orange);}
 .live{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--text-dim);letter-spacing:2px;}
+.today-stats{margin-top:16px;font-size:15px;letter-spacing:1px;color:var(--cyan);text-shadow:0 0 10px rgba(0,255,255,.4);}
 .live .dot{width:12px;height:12px;border-radius:50%;background:var(--green);box-shadow:0 0 12px var(--green);animation:blink 1.4s ease-in-out infinite;}
 @keyframes blink{50%{opacity:.25;}}
 
@@ -167,6 +168,7 @@ html,body{width:100%;height:100%;background:#000;overflow:hidden;font-family:'Pr
       </div>
       <div class="kicker"><span class="ar">&#9654;</span> TOP SCORERS <span class="ar">&#9664;</span></div>
       <div class="live"><span class="dot"></span> LIVE LEADERBOARD</div>
+      <div class="today-stats" id="today-stats"></div>
     </div>
 
     <div class="dash dash-day" id="day">
@@ -204,6 +206,9 @@ html,body{width:100%;height:100%;background:#000;overflow:hidden;font-family:'Pr
 
 <script>
 var KEY='snyk_lb';
+// Global leaderboard API (Render). The static banner runs on GitHub Pages and
+// calls this cross-origin; if it's unreachable we fall back to local scores.
+var LB_API='https://snyk-strike-api.onrender.com';
 var stage=document.getElementById('stage');
 function fit(){var s=Math.min(window.innerWidth/2288,window.innerHeight/624);stage.style.transform='translate(-50%,-50%) scale('+s+')';}
 window.addEventListener('resize',fit);fit();
@@ -289,29 +294,45 @@ function fillPanel(o,list){
   });
 }
 
-function render(){
+// Local fallback: compute the same shape the API returns, from local scores.
+function computeLocal(){
   var all=load().slice().sort(byScore);
   var now=Date.now(),dayStart=laStartOfDay(now),weekStart=laStartOfWeek(now);
   var daily=all.filter(function(e){return typeof e.date==='number' && e.date>=dayStart;});
   var weekly=all.filter(function(e){return typeof e.date==='number' && e.date>=weekStart;});
+  var cnt=daily.length, avg=cnt?Math.round(daily.reduce(function(s,e){return s+(e.score||0);},0)/cnt):0;
+  return {daily:daily.slice(0,10),weekly:weekly.slice(0,5),alltime:all.slice(0,5),today:{count:cnt,avg:avg}};
+}
 
+function render(data,quiet){
+  data=data||computeLocal();
   // All-time keeps the #hero-* / #board-rows contract (top 5).
   fillPanel({wrap:'hero',name:'hero-name',score:'hero-score',vulns:'hero-vulns',sub:'hero-sub',
     rows:'board-rows',emptyName:'READY?',empty:'No scores yet — play to get on the board',
-    max:5,flag:true,startPx:46}, all.slice(0,5));
+    max:5,flag:!quiet,startPx:46}, data.alltime||[]);
   fillPanel({wrap:'week',name:'week-name',score:'week-score',vulns:'week-vulns',
-    rows:'week-rows',emptyName:'—',empty:'No scores this week yet',max:5,startPx:34}, weekly.slice(0,5));
+    rows:'week-rows',emptyName:'—',empty:'No scores this week yet',max:5,startPx:34}, data.weekly||[]);
   fillPanel({wrap:'day',name:'day-name',score:'day-score',vulns:'day-vulns',
-    rows:'day-rows',emptyName:'—',empty:'No scores today yet',max:10,startPx:30}, daily.slice(0,10));
-
+    rows:'day-rows',emptyName:'—',empty:'No scores today yet',max:10,startPx:30}, data.daily||[]);
+  var ts=document.getElementById('today-stats'), t=data.today||{count:0,avg:0};
+  if(ts) ts.textContent = t.count ? (t.count+' PLAYED TODAY · AVG '+nf(t.avg)) : 'BE THE FIRST TO PLAY TODAY';
   first=false;
 }
 
+// Paint local instantly (offline-safe), then refresh from the global API.
+var started=false;
+function refresh(){
+  if(!started){ render(computeLocal(),true); started=true; }
+  fetch(LB_API+'/api/leaderboard',{cache:'no-store'})
+    .then(function(r){return r.ok?r.json():Promise.reject();})
+    .then(function(d){ render(d); })
+    .catch(function(){ render(computeLocal()); });
+}
+
 // live: fires when the GAME window (same origin) writes a score
-window.addEventListener('storage',function(e){if(!e.key||e.key===KEY)render();});
-// fallback poll (covers same-window / edge cases)
-setInterval(render,2000);
-render();
+window.addEventListener('storage',function(e){if(!e.key||e.key===KEY)refresh();});
+setInterval(refresh,4000);
+refresh();
 
 // hidden operator reset: press Shift+R three times within 2s to clear the board
 (function(){
