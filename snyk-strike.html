@@ -249,7 +249,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .code-line.practice-reveal .line-content{color:var(--green)!important;text-shadow:0 0 8px rgba(57,255,20,0.6);}
 
 /* Score pop */
-.score-pop{position:fixed;font-family:'Press Start 2P',monospace;font-size:26px;pointer-events:none;z-index:500;animation:scorePop 1.1s ease forwards;text-shadow:2px 2px 0 rgba(0,0,0,0.8);}
+.score-pop{position:fixed;font-family:'Press Start 2P',monospace;font-size:26px;pointer-events:none;z-index:500;animation:scorePop 1.1s ease forwards;text-shadow:2px 2px 0 rgba(0,0,0,0.8);background:#07071A;padding:4px 10px;border:2px solid currentColor;box-shadow:2px 2px 0 rgba(0,0,0,0.6);}
 @keyframes scorePop{0%{opacity:1;transform:translateY(0) scale(1);}60%{opacity:1;transform:translateY(-50px) scale(1.15);}100%{opacity:0;transform:translateY(-80px) scale(0.8);}}
 @keyframes bigPop{0%{opacity:0;transform:translate(-50%,-50%) scale(0.5);}20%{opacity:1;transform:translate(-50%,-50%) scale(1.2);}60%{opacity:1;transform:translate(-50%,-50%) scale(1);}85%{opacity:1;}100%{opacity:0;transform:translate(-50%,-60%) scale(0.9);}}
 
@@ -866,7 +866,7 @@ function hardDropY(matrix,ox,startY){let y=Math.max(startY,-2);while(!collideAt(
 function lineClearFX(n){
   flash('#00FFFF',0.10);
   const pop=document.createElement('div');
-  pop.style.cssText='position:fixed;top:38%;left:50%;transform:translateX(-50%);font-family:"Press Start 2P",monospace;font-size:16px;color:#00FFFF;text-shadow:0 0 16px #00FFFF;z-index:500;pointer-events:none;animation:bigPop 1.1s ease forwards;';
+  pop.style.cssText='position:fixed;top:38%;left:50%;transform:translateX(-50%);font-family:"Press Start 2P",monospace;font-size:16px;color:#00FFFF;text-shadow:0 0 16px #00FFFF;background:#07071A;padding:12px 22px;border:3px solid #00FFFF;box-shadow:4px 4px 0 rgba(0,0,0,0.5);z-index:500;pointer-events:none;animation:bigPop 1.1s ease forwards;';
   pop.textContent=n>=4?'TETRIS!':(n>1?n+'x LINE CLEAR!':'LINE CLEAR!');
   (document.getElementById('viewport')||document.body).appendChild(pop); setTimeout(()=>pop.remove(),1100);
 }
@@ -1439,7 +1439,7 @@ function showRoundResult(success){
   if(success){
     flash('#39FF14',0.1);
     const pop=document.createElement('div');
-    pop.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-family:"Press Start 2P",monospace;font-size:40px;color:#39FF14;text-shadow:0 0 30px #39FF14,3px 3px 0 #006600;z-index:500;pointer-events:none;animation:bigPop 1.4s ease forwards;';
+    pop.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-family:"Press Start 2P",monospace;font-size:40px;color:#39FF14;text-shadow:0 0 30px #39FF14,3px 3px 0 #006600;background:#07071A;padding:22px 38px;border:4px solid #39FF14;box-shadow:6px 6px 0 rgba(0,0,0,0.6);z-index:500;pointer-events:none;animation:bigPop 1.4s ease forwards;';
     pop.textContent='+'+total.toLocaleString()+' XP';
     (document.getElementById('viewport')||document.body).appendChild(pop);
     setTimeout(()=>pop.remove(),1400);
@@ -1451,7 +1451,7 @@ function showRoundResult(success){
     state.score=Math.max(0,state.score-penalty);
     updateScore();
     const pop=document.createElement('div');
-    pop.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-family:"Press Start 2P",monospace;font-size:30px;color:#FF2050;text-shadow:0 0 20px #FF2050,2px 2px 0 #880000;z-index:500;pointer-events:none;animation:bigPop 1.2s ease forwards;';
+    pop.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-family:"Press Start 2P",monospace;font-size:30px;color:#FF2050;text-shadow:0 0 20px #FF2050,2px 2px 0 #880000;background:#07071A;padding:20px 34px;border:4px solid #FF2050;box-shadow:6px 6px 0 rgba(0,0,0,0.6);z-index:500;pointer-events:none;animation:bigPop 1.2s ease forwards;';
     pop.textContent='-'+penalty+' XP';
     (document.getElementById('viewport')||document.body).appendChild(pop);
     setTimeout(()=>pop.remove(),1200);
