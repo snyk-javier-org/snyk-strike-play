@@ -245,6 +245,9 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 /* PRACTICE mode: reveal the right answer after 5s */
 .fix-option.practice-reveal{border-color:var(--green)!important;box-shadow:0 0 16px rgba(57,255,20,0.65),3px 3px 0 rgba(57,255,20,0.35)!important;}
 .fix-option.practice-reveal::after{content:'\2190 ANSWER';position:absolute;top:6px;right:10px;color:var(--green);font-size:11px;letter-spacing:1px;text-shadow:0 0 8px rgba(57,255,20,0.6);}
+/* keyboard selection highlight (↑/↓ + Enter) */
+.fix-option.kb-selected{border-color:var(--orange)!important;box-shadow:3px 3px 0 rgba(255,107,53,0.6),0 0 16px rgba(255,107,53,0.55)!important;transform:translate(-1px,-1px);}
+.code-line.kb-selected{outline:2px solid var(--cyan);outline-offset:-2px;background:rgba(0,255,255,0.08);}
 .code-line.practice-reveal{background:rgba(57,255,20,0.10);outline:2px solid var(--green);outline-offset:-2px;}
 .code-line.practice-reveal .line-content{color:var(--green)!important;text-shadow:0 0 8px rgba(57,255,20,0.6);}
 
@@ -423,6 +426,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
             <span class="tut-mech-desc">Tap the correct Snyk fix → block rotates and locks into place ✓</span>
           </div>
         </div>
+        <div class="tut-text">⌨️ <strong>Keyboard:</strong> press <strong>↑ ↓</strong> to move between choices and <strong>Enter</strong> to pick — for both finding the vuln and choosing the fix.</div>
         <div class="tut-text">Complete both steps before the block lands. Board fills over rounds — just like real Tetris.</div>
       </div>
       <div class="tut-step" id="tut-3">
@@ -1330,6 +1334,7 @@ function openFixPanel(vi){
     opts.appendChild(el);
   });
   document.getElementById('fix-panel').classList.add('open');
+  {const _f=opts.querySelector('.fix-option');if(_f)_f.classList.add('kb-selected');}   // keyboard: preselect first
   // PRACTICE: reveal the correct fix after a fixed 5s.
   clearTimeout(practiceFixTimer);
   if(practiceMode){
@@ -1422,7 +1427,8 @@ function applyFix(fixIdx){
     setTimeout(()=>document.getElementById('game').classList.remove('screen-shake'),300);
 
     const opt=document.querySelector('.fix-option[data-fix-idx="'+fixIdx+'"]');
-    if(opt)opt.classList.add('wrong');
+    if(opt){opt.classList.add('wrong');opt.classList.remove('kb-selected');}
+    {const _n=document.querySelector('#fix-options .fix-option:not(.wrong)');if(_n)_n.classList.add('kb-selected');}   // keyboard: reselect a live option
     SFX.wrong();
     state.roundXPItems.push({label:'Wrong fix',xp:-100});
     loseLife('NOT THE FIX');
@@ -1766,6 +1772,37 @@ function bumpIdle(){ if(!kioskActive)return; if(idleTimer)clearTimeout(idleTimer
 function idleReset(){ if(kioskActive) goToAttract(); }
 document.addEventListener('pointerdown',bumpIdle,true);
 document.addEventListener('keydown',bumpIdle,true);
+
+// Keyboard: ↑/↓ move between choices, Enter selects — for both finding the
+// vuln (step 1) and picking the fix (step 2). Mouse/touch still work.
+document.addEventListener('keydown',function(e){
+  if(!state.gameActive)return;
+  if(e.target&&e.target.tagName==='INPUT')return;
+  if(e.key!=='ArrowUp'&&e.key!=='ArrowDown'&&e.key!=='Enter')return;
+  var panelOpen=document.getElementById('fix-panel').classList.contains('open');
+  var items,onEnter;
+  if(state.step===2&&panelOpen){
+    items=[].slice.call(document.querySelectorAll('#fix-options .fix-option:not(.wrong)'));
+    onEnter=function(el){applyFix(parseInt(el.dataset.fixIdx,10));};
+  }else if(state.step===1){
+    items=[].slice.call(document.querySelectorAll('#code-body .code-line')).filter(function(el){var c=el.querySelector('.line-content');return c&&c.textContent.trim()!=='';});
+    onEnter=function(el){el.dispatchEvent(new Event('pointerdown',{bubbles:true}));};
+  }else return;
+  if(!items.length)return;
+  e.preventDefault();
+  if(e.key==='Enter'){
+    var sel=items.filter(function(el){return el.classList.contains('kb-selected');})[0]||items[0];
+    onEnter(sel);
+    return;
+  }
+  var dir=e.key==='ArrowDown'?1:-1,cur=-1;
+  for(var i=0;i<items.length;i++){if(items[i].classList.contains('kb-selected')){cur=i;break;}}
+  if(cur<0)cur=dir>0?-1:0;
+  var next=(cur+dir+items.length)%items.length;
+  items.forEach(function(el){el.classList.remove('kb-selected');});
+  items[next].classList.add('kb-selected');
+  if(items[next].scrollIntoView)items[next].scrollIntoView({block:'nearest'});
+},false);
 
 updateAttract();
 SFX.initBtn();
