@@ -115,6 +115,8 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .tut-btn.skip{background:transparent;color:var(--text-dim);border-color:transparent;box-shadow:none;font-size:17px;}
 .tut-btn.start{background:var(--green);color:#000;border-color:rgba(255,255,255,0.3);}
 .tut-btn.kb-selected{outline:3px solid #fff;outline-offset:4px;}
+/* SKIP is transparent/dim, so give its selected state a visible fill */
+.tut-btn.skip.kb-selected{color:#fff;background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.5);}
 .tut-dots{display:flex;gap:7px;}
 .tut-dot{width:8px;height:8px;border:2px solid var(--border2);transition:all 0.2s;}
 .tut-dot.active{background:var(--orange);border-color:var(--orange);box-shadow:0 0 6px var(--orange);}
@@ -295,6 +297,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .go-btn:hover{transform:translate(-1px,-1px);}
 .go-btn.primary{background:var(--orange);color:#000;border-color:rgba(255,255,255,0.3);}
 .go-btn.secondary{background:var(--bg3);color:var(--text-dim);border-color:var(--border2);}
+.go-btn.kb-selected{outline:3px solid #fff;outline-offset:4px;}
 .qr-section{text-align:center;margin-top:6px;}
 .qr-lbl{font-size:16px;color:var(--text-dim);letter-spacing:2px;margin-bottom:5px;}
 .qr-url{font-size:20px;color:var(--orange);text-shadow:0 0 12px var(--orange);}
@@ -1579,6 +1582,7 @@ function gameOver(){
     // Practice runs never register on the leaderboard.
     document.getElementById('name-entry').style.display=(!practiceMode && state.score>0)?'flex':'none';
     document.getElementById('game-over').style.display='flex';
+    {const _pb=document.querySelector('#game-over .go-btn.primary');if(_pb){document.querySelectorAll('#game-over .go-btn').forEach(function(x){x.classList.remove('kb-selected');});_pb.classList.add('kb-selected');}}   // keyboard: preselect PLAY AGAIN
     bumpIdle();
   },400);
 }
@@ -1838,6 +1842,28 @@ function fitViewport(){var vp=document.getElementById('viewport');if(!vp)return;
 window.addEventListener('resize',fitViewport);
 window.addEventListener('orientationchange',fitViewport);
 fitViewport();
+
+// Keyboard on the game-over screen (incl. practice-over): ↑/↓ move between
+// PLAY AGAIN / MENU and Enter activates. Enter in the name field submits.
+(function(){
+  function goVisible(){var el=document.getElementById('game-over');return el&&getComputedStyle(el).display!=='none';}
+  document.addEventListener('keydown',function(e){
+    if(!goVisible())return;
+    if(e.target&&e.target.id==='name-input'){if(e.key==='Enter'){e.preventDefault();submitScore();}return;}
+    if(e.target&&e.target.tagName==='INPUT')return;
+    if(e.key!=='ArrowUp'&&e.key!=='ArrowDown'&&e.key!=='Enter')return;
+    var items=[].slice.call(document.querySelectorAll('#game-over .go-btn')).filter(function(el){return getComputedStyle(el).display!=='none';});
+    if(!items.length)return;
+    e.preventDefault();
+    if(e.key==='Enter'){(items.filter(function(el){return el.classList.contains('kb-selected');})[0]||items[0]).click();return;}
+    var dir=e.key==='ArrowDown'?1:-1,cur=-1;
+    for(var i=0;i<items.length;i++){if(items[i].classList.contains('kb-selected')){cur=i;break;}}
+    if(cur<0)cur=dir>0?-1:0;
+    var next=(cur+dir+items.length)%items.length;
+    items.forEach(function(el){el.classList.remove('kb-selected');});
+    items[next].classList.add('kb-selected');
+  });
+})();
 
 // Keyboard on the tutorial: ←/→ page through steps; ↑/↓ move between the
 // SKIP / BACK / NEXT buttons and Enter activates (defaults to NEXT).
