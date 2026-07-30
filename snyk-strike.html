@@ -53,6 +53,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 #attract .mute-btn{position:absolute;top:24px;right:24px;}
 @keyframes blink{50%{opacity:0;}}
 .attract-url{font-size:18px;color:var(--text-dim);letter-spacing:2px;}
+.attract-ver{margin-top:8px;font-size:12px;letter-spacing:2px;color:#5a5a7a;}
 .attract-url span{color:var(--orange);}
 .marquee-wrap{background:var(--bg2);border-top:3px solid var(--orange);border-bottom:3px solid var(--orange);padding:7px 0;overflow:hidden;width:100%;position:absolute;bottom:55px;}
 .marquee-inner{display:inline-block;white-space:nowrap;font-size:18px;color:var(--orange);animation:marquee 20s linear infinite;letter-spacing:2px;}
@@ -383,6 +384,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
       <a class="menu-btn leaderboard" href="./leaderboard.html">🏆 LEADERBOARD</a>
     </div>
     <div class="attract-url">POWERED BY <span>SNYK.IO</span></div>
+    <div class="attract-ver" id="app-version"></div>
   </div>
   <div class="marquee-wrap"><span class="marquee-inner">⚡ SCAN · FIX · BUILD &nbsp;&nbsp;&nbsp; 🔴 HARDCODED CREDENTIALS &nbsp;&nbsp;&nbsp; 🔴 SQL INJECTION &nbsp;&nbsp;&nbsp; 🔴 BROKEN AUTH &nbsp;&nbsp;&nbsp; 🔴 XSS &nbsp;&nbsp;&nbsp; 🔴 EXPOSED API KEYS &nbsp;&nbsp;&nbsp; CAN YOU FIND THEM BEFORE THE BLOCK LANDS? &nbsp;&nbsp;&nbsp; ⚡ SNYK.IO &nbsp;&nbsp;&nbsp;</span></div>
 </div>
@@ -1816,6 +1818,10 @@ document.addEventListener('keydown',function(e){
 
 updateAttract();
 SFX.initBtn();
+
+// App version (MAJOR.MINOR.YYYYMMDDHHMM in PST) — keep in sync with package.json.
+var APP_VERSION='1.0.202607300721';
+{var _v=document.getElementById('app-version');if(_v)_v.textContent='v'+APP_VERSION;}
 
 // Keyboard: ↑/↓ move between the attract-screen buttons, Enter activates.
 (function(){
