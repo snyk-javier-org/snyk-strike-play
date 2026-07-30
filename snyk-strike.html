@@ -33,12 +33,17 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .stat-box{background:var(--bg2);border:3px solid var(--border2);padding:10px 18px;text-align:center;box-shadow:3px 3px 0 var(--border);min-width:100px;}
 .stat-num{font-size:27px;color:var(--orange);text-shadow:0 0 12px var(--orange);display:block;margin-bottom:6px;}
 .stat-lbl{font-size:16px;color:var(--text-dim);letter-spacing:1px;display:block;}
+.stat-name{font-size:13px;color:var(--text-dim);letter-spacing:1px;display:block;margin:5px auto 0;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.stat-box.day .stat-num{color:#E0894A;text-shadow:0 0 12px rgba(224,137,74,0.6);}
+.stat-box.week .stat-num{color:#C7CEE0;text-shadow:0 0 12px rgba(199,206,224,0.5);}
+.stat-box.all .stat-num{color:#FFD24A;text-shadow:0 0 12px rgba(255,210,74,0.6);}
 .insert-coin{font-size:26px;color:var(--yellow);text-shadow:0 0 15px var(--yellow);letter-spacing:2px;animation:blink 1s step-end infinite;padding:14px 28px;border:3px solid var(--yellow);box-shadow:3px 3px 0 rgba(255,224,0,0.3);cursor:pointer;}
 .menu-btns{display:flex;gap:16px;margin-top:16px;justify-content:center;}
-.menu-btn{font-size:18px;letter-spacing:2px;padding:12px 24px;border:3px solid currentColor;cursor:pointer;font-family:inherit;transition:transform .1s ease,box-shadow .1s ease;}
+.menu-btn{font-size:18px;letter-spacing:2px;padding:12px 24px;border:3px solid currentColor;cursor:pointer;font-family:inherit;text-decoration:none;transition:transform .1s ease,box-shadow .1s ease;}
 .menu-btn:hover{transform:translateY(-2px);}
 .menu-btn.practice{color:var(--green);text-shadow:0 0 10px var(--green);box-shadow:3px 3px 0 rgba(57,255,20,0.3);}
 .menu-btn.tutorial{color:var(--magenta);text-shadow:0 0 10px var(--magenta);box-shadow:3px 3px 0 rgba(224,64,251,0.3);}
+.menu-btn.leaderboard{color:var(--cyan);text-shadow:0 0 10px var(--cyan);box-shadow:3px 3px 0 rgba(0,255,255,0.3);}
 .learn-link{display:inline-block;margin-left:10px;font-size:11px;letter-spacing:1px;color:var(--cyan);text-decoration:none;border:1px solid var(--cyan);padding:2px 8px;vertical-align:middle;opacity:.85;flex:0 0 auto;}
 .learn-link:hover{opacity:1;box-shadow:0 0 10px rgba(0,255,255,.5);}
 #mute-btn{position:absolute;top:16px;right:16px;z-index:60;width:48px;height:48px;line-height:44px;text-align:center;font-size:22px;cursor:pointer;border:2px solid #2A2A60;background:rgba(7,7,26,0.6);user-select:none;}
@@ -234,6 +239,11 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .fix-opt-code{font-family:'JetBrains Mono',monospace;font-size:22px;color:var(--green);text-shadow:0 0 6px rgba(57,255,20,0.4);word-break:break-all;flex:1;}
 .fix-opt-hint{display:none;}
 .fix-hint-bar{font-size:16px;color:var(--text-dim);text-align:center;padding:6px;border-top:2px solid var(--border2);flex-shrink:0;letter-spacing:1px;}
+/* PRACTICE mode: reveal the right answer after 5s */
+.fix-option.practice-reveal{border-color:var(--green)!important;box-shadow:0 0 16px rgba(57,255,20,0.65),3px 3px 0 rgba(57,255,20,0.35)!important;}
+.fix-option.practice-reveal::after{content:'\2190 ANSWER';position:absolute;top:6px;right:10px;color:var(--green);font-size:11px;letter-spacing:1px;text-shadow:0 0 8px rgba(57,255,20,0.6);}
+.code-line.practice-reveal{background:rgba(57,255,20,0.10);outline:2px solid var(--green);outline-offset:-2px;}
+.code-line.practice-reveal .line-content{color:var(--green)!important;text-shadow:0 0 8px rgba(57,255,20,0.6);}
 
 /* Score pop */
 .score-pop{position:fixed;font-family:'Press Start 2P',monospace;font-size:26px;pointer-events:none;z-index:500;animation:scorePop 1.1s ease forwards;text-shadow:2px 2px 0 rgba(0,0,0,0.8);}
@@ -351,12 +361,15 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
       <div class="tetro" style="grid-template-columns:repeat(2,16px);color:var(--yellow)"><div class="tetro-cell on"></div><div class="tetro-cell on"></div><div class="tetro-cell on"></div><div class="tetro-cell on"></div></div>
     </div>
     <div class="attract-stats">
-      <div class="stat-box"><span class="stat-num" id="lb-top">—</span><span class="stat-lbl" id="lb-top-lbl">HI-SCORE</span></div>
+      <div class="stat-box day"><span class="stat-num" id="hi-day">--</span><span class="stat-lbl">TODAY</span><span class="stat-name" id="hi-day-name">—</span></div>
+      <div class="stat-box week"><span class="stat-num" id="hi-week">--</span><span class="stat-lbl">THIS WEEK</span><span class="stat-name" id="hi-week-name">—</span></div>
+      <div class="stat-box all"><span class="stat-num" id="hi-all">--</span><span class="stat-lbl">ALL-TIME</span><span class="stat-name" id="hi-all-name">—</span></div>
     </div>
     <div class="insert-coin" onclick="startNormal()">▶ TAP TO PLAY ◀</div>
     <div class="menu-btns">
       <div class="menu-btn practice" onclick="startPractice()">🐢 PRACTICE</div>
       <div class="menu-btn tutorial" onclick="showTutorialOnly()">📖 TUTORIAL</div>
+      <a class="menu-btn leaderboard" href="./leaderboard.html">🏆 LEADERBOARD</a>
     </div>
     <div class="attract-url">POWERED BY <span>SNYK.IO</span></div>
   </div>
@@ -764,6 +777,7 @@ const demoTut=(function(){
 
 let tutStep=1;const TUT_TOTAL=5;
 let practiceMode=false;   // slower fall speed for beginners
+let practiceFixTimer=null; // PRACTICE: 5s timer that reveals the correct fix
 let tutorialOnly=false;   // TUTORIAL button: show the 5 screens then return to menu
 
 // Attract-screen entry points. TAP TO PLAY / PRACTICE go straight into the game
@@ -1087,12 +1101,26 @@ function owaspLabel(ch){var m=OWASP_INDEX[ch.type];if(!m)return "";var s="OWASP 
 // The raw pool is heavily skewed (A03 + A07 ~= 84%). Spread picks evenly
 // across OWASP Top 10 categories so players rotate through categories
 // instead of repeatedly seeing the same one.
+// ── PRACTICE SET ──────────────────────────────────────────────
+// Five fixed beginner challenges reserved for PRACTICE mode. They are
+// excluded from the scored game (GAME_POOL) so a practice run never
+// spoils a real question.
+var PRACTICE_SET=(function(){
+  var want=['SQL INJECTION','CROSS-SITE SCRIPTING','HARDCODED SECRET','PATH TRAVERSAL','BROKEN AUTHENTICATION'];
+  var set=[];
+  want.forEach(function(t){var c=CHALLENGE_POOL.find(function(x){return x.type===t && set.indexOf(x)<0;});if(c)set.push(c);});
+  for(var i=0;set.length<5 && i<CHALLENGE_POOL.length;i++){if(set.indexOf(CHALLENGE_POOL[i])<0)set.push(CHALLENGE_POOL[i]);}
+  return set.slice(0,5);
+})();
+var PRACTICE_IDS=new Set(PRACTICE_SET.map(function(c){return c.id;}));
+var GAME_POOL=CHALLENGE_POOL.filter(function(c){return !PRACTICE_IDS.has(c.id);});
+
 function pickChallenges(count){
   const picked=[];
   const usedThisRound=new Set();
-  let avail=CHALLENGE_POOL.filter(c=>!state.usedIds.includes(c.id));
+  let avail=GAME_POOL.filter(c=>!state.usedIds.includes(c.id));
   for(let i=0;i<count;i++){
-    if(!avail.length){ state.usedIds=[]; avail=CHALLENGE_POOL.filter(c=>!picked.includes(c)); if(!avail.length)avail=[...CHALLENGE_POOL]; }
+    if(!avail.length){ state.usedIds=[]; avail=GAME_POOL.filter(c=>!picked.includes(c)); if(!avail.length)avail=[...GAME_POOL]; }
     const byCat={};
     for(const c of avail){ const k=owaspOf(c); (byCat[k]||(byCat[k]=[])).push(c); }
     let cats=Object.keys(byCat).filter(k=>!usedThisRound.has(k));
@@ -1107,7 +1135,7 @@ function pickChallenges(count){
     state.catCounts[cat]=(state.catCounts[cat]||0)+1;
     avail=avail.filter(c=>c!==ch);
   }
-  if(state.usedIds.length>CHALLENGE_POOL.length*2)state.usedIds=state.usedIds.slice(-CHALLENGE_POOL.length);
+  if(state.usedIds.length>GAME_POOL.length*2)state.usedIds=state.usedIds.slice(-GAME_POOL.length);
   return picked;
 }
 
@@ -1139,11 +1167,18 @@ function startGame(){
 
 function loadChallenge(){
   const lvl=levelConfig(state.level);
-  const vulnCount=lvl.vulnCount;
   tetris.dropMs=lvl.dropMs;
   tetris.activePiece=null;
 
-  const challenges=pickChallenges(vulnCount);
+  let vulnCount, challenges;
+  if(practiceMode){
+    if(state.round>=PRACTICE_SET.length){ finishPractice(); return; }   // 5-question cap
+    vulnCount=1;
+    challenges=[PRACTICE_SET[state.round]];
+  } else {
+    vulnCount=lvl.vulnCount;
+    challenges=pickChallenges(vulnCount);
+  }
   state.currentChallenges=challenges;
   state.vulnStates=challenges.map(()=>({flagged:false,fixed:false,glowState:'none',hintTimers:[]}));
   state.activeVulnIdx=0;
@@ -1209,10 +1244,13 @@ function scheduleHints(vi){
   const t4=setTimeout(()=>{const e=el();if(e&&!vs.flagged){e.classList.remove('glow-soft');e.classList.add('glow-full');vs.glowState='full';if(vi===state.activeVulnIdx)document.getElementById('vuln-badge').classList.add('visible');}},at(0.66));
   const t5=setTimeout(()=>{const e=el();if(e&&!vs.flagged){e.classList.remove('glow-full');e.classList.add('glow-critical');vs.glowState='critical';showToast('EXPLOIT IMMINENT — FIND THE VULN!','bad',2000);}},at(0.82));
   vs.hintTimers=[t1,t2,t3,t4,t5];
+  // PRACTICE: reveal the vulnerable line after a fixed 5s.
+  if(practiceMode){vs.hintTimers.push(setTimeout(()=>{const e=el();if(e&&!vs.flagged)e.classList.add('practice-reveal');},5000));}
 }
 
 function clearAllHintTimers(){
   if(state.vulnStates)state.vulnStates.forEach(vs=>{if(vs.hintTimers)vs.hintTimers.forEach(t=>clearTimeout(t));});
+  clearTimeout(practiceFixTimer);
 }
 
 // ── TAP HANDLER ───────────────────────────────────────────────
@@ -1288,6 +1326,12 @@ function openFixPanel(vi){
     opts.appendChild(el);
   });
   document.getElementById('fix-panel').classList.add('open');
+  // PRACTICE: reveal the correct fix after a fixed 5s.
+  clearTimeout(practiceFixTimer);
+  if(practiceMode){
+    const ci=ch.fixes.findIndex(f=>f.correct);
+    practiceFixTimer=setTimeout(()=>{const c=opts.querySelector('.fix-option[data-fix-idx="'+ci+'"]');if(c)c.classList.add('practice-reveal');},5000);
+  }
 }
 
 function applyFix(fixIdx){
@@ -1296,6 +1340,7 @@ function applyFix(fixIdx){
   const vs=state.vulnStates[vi];
   const fix=ch.fixes[fixIdx];
   if(!fix||vs.fixed)return;
+  clearTimeout(practiceFixTimer);
 
   if(fix.correct){
     vs.fixed=true;
@@ -1473,18 +1518,30 @@ function nextRound(){
   state.level=state.round;                       // 1 level per round, endless
   const disp=state.level+1;
   state.livesCap = disp>16 ? 10 : 5;             // 5 lives for levels 1-16, 10 after
-  if(disp%8===0){                                // refill at every 8-level milestone
-    state.lives=state.livesCap;
-    levelNotice('⬆ LEVEL '+disp+' — LIVES REFILLED', state.livesCap+' LIVES RESTORED','#39FF14');
-    SFX.level();
-  } else if(levelConfig(state.level).vulnCount>prevVuln){
-    levelNotice('⬆ LEVEL '+disp, levelConfig(state.level).vulnCount+' VULNS PER WAVE · FASTER','#FF6B35');
-    SFX.level();
+  if(!practiceMode){
+    if(disp%8===0){                                // refill at every 8-level milestone
+      state.lives=state.livesCap;
+      levelNotice('⬆ LEVEL '+disp+' — LIVES REFILLED', state.livesCap+' LIVES RESTORED','#39FF14');
+      SFX.level();
+    } else if(levelConfig(state.level).vulnCount>prevVuln){
+      levelNotice('⬆ LEVEL '+disp, levelConfig(state.level).vulnCount+' VULNS PER WAVE · FASTER','#FF6B35');
+      SFX.level();
+    }
   }
   if(state.lives>state.livesCap) state.lives=state.livesCap;
   updateScore();
   state.gameActive=true;
   loadChallenge();
+}
+
+// PRACTICE mode ends cleanly after 5 questions — no leaderboard entry.
+function finishPractice(){
+  state.gameActive=false;
+  clearAllHintTimers();clearTetrisTimers();
+  if(tetris.activePiece)tetris.activePiece.fixed=true;
+  document.getElementById('fix-panel').classList.remove('open');
+  state.practiceComplete=true;
+  gameOver();
 }
 
 // ── GAME OVER ─────────────────────────────────────────────────
@@ -1493,12 +1550,20 @@ function gameOver(){
   SFX.over();
   setTimeout(()=>{
     const tEl=document.querySelector('.go-title'), sEl=document.querySelector('.go-sub');
-    if(tEl){tEl.textContent='SYSTEM COMPROMISED';tEl.style.color='var(--red)';}
-    if(sEl)sEl.textContent=state.loseReason==='lives'?'Out of lives — too many missed vulns.':'The stack overflowed — the backlog won.';
+    if(practiceMode){
+      if(tEl){tEl.textContent=state.practiceComplete?'PRACTICE COMPLETE':'PRACTICE OVER';tEl.style.color='var(--green)';}
+      if(sEl)sEl.textContent=state.practiceComplete?'Nice — you cleared all 5 practice challenges. Ready for the real thing?':'Practice run ended — give it another go!';
+    } else {
+      if(tEl){tEl.textContent='SYSTEM COMPROMISED';tEl.style.color='var(--red)';}
+      if(sEl)sEl.textContent=state.loseReason==='lives'?'Out of lives — too many missed vulns.':'The stack overflowed — the backlog won.';
+    }
     document.getElementById('go-score').textContent=state.score.toLocaleString();
-    document.getElementById('go-vulns').textContent='LEVEL '+(state.level+1)+' REACHED  ·  '+state.vulnsFixed+' VULN'+(state.vulnsFixed!==1?'S':'')+' REMEDIATED';
+    document.getElementById('go-vulns').textContent=practiceMode
+      ? (state.vulnsFixed+' OF '+PRACTICE_SET.length+' PRACTICE VULNS FIXED')
+      : ('LEVEL '+(state.level+1)+' REACHED  ·  '+state.vulnsFixed+' VULN'+(state.vulnsFixed!==1?'S':'')+' REMEDIATED');
     renderLeaderboard();
-    document.getElementById('name-entry').style.display=state.score>0?'flex':'none';
+    // Practice runs never register on the leaderboard.
+    document.getElementById('name-entry').style.display=(!practiceMode && state.score>0)?'flex':'none';
     document.getElementById('game-over').style.display='flex';
     bumpIdle();
   },400);
@@ -1516,15 +1581,32 @@ function renderLeaderboard(){
 function loadLeaderboard(){try{const s=localStorage.getItem('snyk_lb');return s?JSON.parse(s):[];}catch{return [];}}
 function saveLeaderboard(lb){try{localStorage.setItem('snyk_lb',JSON.stringify(lb));}catch{}}
 
+// Pacific-time (America/Los_Angeles) day/week boundaries — same logic the
+// leaderboard uses, so the attract-screen leaders match the dashboards.
+function laParts(ts){var o={};new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',hour12:false,weekday:'short',hour:'2-digit',minute:'2-digit',second:'2-digit'}).formatToParts(new Date(ts)).forEach(function(p){o[p.type]=p.value;});return o;}
+function laStartOfDay(ts){var o=laParts(ts);var secs=(parseInt(o.hour,10)%24)*3600+parseInt(o.minute,10)*60+parseInt(o.second,10);return ts-secs*1000;}
+function laStartOfWeek(ts){var d=laStartOfDay(ts),g=0;while(laParts(d).weekday!=='Sun'&&g++<8){d=laStartOfDay(d-3600000);}return d;}
+
 function updateAttract(){
   const lb=loadLeaderboard();
-  const topEl=document.getElementById('lb-top'), lblEl=document.getElementById('lb-top-lbl');
-  if(!topEl) return;
-  if(lb.length){ topEl.textContent=lb[0].score.toLocaleString(); if(lblEl)lblEl.textContent=(lb[0].name||'ANON')+' · HI-SCORE'; }
-  else { topEl.textContent='--'; if(lblEl)lblEl.textContent='HI-SCORE'; }
+  const now=Date.now(), dayStart=laStartOfDay(now), weekStart=laStartOfWeek(now);
+  const sorted=lb.slice().sort((a,b)=>(b.score||0)-(a.score||0));
+  const day=sorted.find(e=>typeof e.date==='number'&&e.date>=dayStart);
+  const week=sorted.find(e=>typeof e.date==='number'&&e.date>=weekStart);
+  const all=sorted[0];
+  function fill(numId,nameId,e){
+    const n=document.getElementById(numId), nm=document.getElementById(nameId);
+    if(!n)return;
+    if(e){ n.textContent=(e.score||0).toLocaleString(); if(nm)nm.textContent=(e.name||'ANON'); }
+    else { n.textContent='--'; if(nm)nm.textContent='—'; }
+  }
+  fill('hi-day','hi-day-name',day);
+  fill('hi-week','hi-week-name',week);
+  fill('hi-all','hi-all-name',all);
 }
 
 function submitScore(){
+  if(practiceMode)return;   // practice runs never register on the leaderboard
   const name=document.getElementById('name-input').value.trim().toUpperCase()||'ANON';
   const lb=loadLeaderboard();
   lb.push({name,score:state.score,vulns:state.vulnsFixed,date:Date.now()});
