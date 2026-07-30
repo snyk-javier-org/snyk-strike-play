@@ -114,6 +114,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .tut-btn.prev{background:transparent;color:var(--text-dim);border-color:var(--border2);}
 .tut-btn.skip{background:transparent;color:var(--text-dim);border-color:transparent;box-shadow:none;font-size:17px;}
 .tut-btn.start{background:var(--green);color:#000;border-color:rgba(255,255,255,0.3);}
+.tut-btn.kb-selected{outline:3px solid #fff;outline-offset:4px;}
 .tut-dots{display:flex;gap:7px;}
 .tut-dot{width:8px;height:8px;border:2px solid var(--border2);transition:all 0.2s;}
 .tut-dot.active{background:var(--orange);border-color:var(--orange);box-shadow:0 0 6px var(--orange);}
@@ -808,6 +809,8 @@ function renderTutStep(){
   const nb=document.getElementById('tut-next-btn');
   nb.textContent=tutStep===TUT_TOTAL?(tutorialOnly?'DONE >':'PLAY >'):'NEXT >';
   nb.className='tut-btn '+(tutStep===TUT_TOTAL?'start':'next');
+  document.querySelectorAll('#tutorial .tut-btn').forEach(function(x){x.classList.remove('kb-selected');});
+  nb.classList.add('kb-selected');   // keyboard: default to the primary (NEXT/PLAY/DONE) button
   if(tutStep===1){demoTut.start();}else{demoTut.stop();}
 }
 
@@ -1835,6 +1838,29 @@ function fitViewport(){var vp=document.getElementById('viewport');if(!vp)return;
 window.addEventListener('resize',fitViewport);
 window.addEventListener('orientationchange',fitViewport);
 fitViewport();
+
+// Keyboard on the tutorial: ←/→ page through steps; ↑/↓ move between the
+// SKIP / BACK / NEXT buttons and Enter activates (defaults to NEXT).
+(function(){
+  function tutVisible(){var el=document.getElementById('tutorial');return el&&getComputedStyle(el).display!=='none';}
+  document.addEventListener('keydown',function(e){
+    if(!tutVisible())return;
+    if(e.target&&e.target.tagName==='INPUT')return;
+    if(e.key==='ArrowLeft'){e.preventDefault();tutPrev();return;}
+    if(e.key==='ArrowRight'){e.preventDefault();tutNext();return;}
+    if(e.key!=='ArrowUp'&&e.key!=='ArrowDown'&&e.key!=='Enter')return;
+    var items=[].slice.call(document.querySelectorAll('#tutorial .tut-btn')).filter(function(el){return getComputedStyle(el).display!=='none';});
+    if(!items.length)return;
+    e.preventDefault();
+    if(e.key==='Enter'){(items.filter(function(el){return el.classList.contains('kb-selected');})[0]||document.getElementById('tut-next-btn')).click();return;}
+    var dir=e.key==='ArrowDown'?1:-1,cur=-1;
+    for(var i=0;i<items.length;i++){if(items[i].classList.contains('kb-selected')){cur=i;break;}}
+    if(cur<0)cur=dir>0?-1:0;
+    var next=(cur+dir+items.length)%items.length;
+    items.forEach(function(el){el.classList.remove('kb-selected');});
+    items[next].classList.add('kb-selected');
+  });
+})();
 </script>
 </body>
 </html>
