@@ -99,9 +99,62 @@ html,body{width:100%;height:100%;background:#000;overflow:hidden;font-family:'Pr
   background:rgba(7,7,26,.94);box-shadow:6px 6px 0 rgba(57,255,20,.25);opacity:0;pointer-events:none;display:none;}
 .reset-flash.show{display:block;animation:rflash 2.6s ease-out forwards;}
 @keyframes rflash{0%{opacity:0;transform:translate(-50%,-50%) scale(.85);}12%{opacity:1;transform:translate(-50%,-50%) scale(1);}75%{opacity:1;}100%{opacity:0;}}
+/* ══ THREE-BOARD DASHBOARD (today / this week / all-time) ══ */
+.banner{align-items:stretch;gap:24px;padding:20px 34px;}
+.col-brand{flex:0 0 330px;}
+.col-brand .logo-title{font-size:46px;}
+.dash{flex:1 1 0;min-width:0;display:flex;flex-direction:column;justify-content:flex-start;
+  align-self:stretch;border-left:3px solid var(--border2);padding:14px 0 14px 26px;overflow:hidden;}
+.dash-head{display:flex;align-items:center;gap:14px;margin-bottom:8px;}
+.dash-title{font-family:'Press Start 2P',monospace;font-size:17px;letter-spacing:2px;
+  color:var(--magenta);text-shadow:0 0 12px rgba(224,64,251,.5);}
+.dash-all .dash-title{color:var(--gold);text-shadow:0 0 14px rgba(255,210,74,.6);}
+.crown{flex:0 0 auto;height:auto;}
+.crown-all{width:118px;filter:drop-shadow(0 0 8px rgba(255,210,74,.75));}
+.crown-week{width:74px;filter:drop-shadow(0 0 7px rgba(199,206,224,.7));}
+.crown-day{width:50px;filter:drop-shadow(0 0 6px rgba(224,137,74,.7));}
+.crown-all path,.crown-all rect{fill:var(--gold);}
+.crown-week path,.crown-week rect{fill:var(--silver);}
+.crown-day path,.crown-day rect{fill:var(--bronze);}
+.champ{position:relative;margin-bottom:12px;}
+.champ-name{font-family:'Press Start 2P',monospace;white-space:nowrap;line-height:1.1;
+  display:inline-block;max-width:100%;
+  color:var(--cyan);text-shadow:3px 3px 0 var(--purple),0 0 18px rgba(0,255,255,.5);}
+.dash-week .champ-name{color:var(--silver);text-shadow:3px 3px 0 var(--purple),0 0 18px rgba(199,206,224,.4);}
+.dash-day .champ-name{color:var(--green);text-shadow:3px 3px 0 var(--purple),0 0 18px rgba(57,255,20,.5);}
+.dash-all .champ-name{color:var(--orange);text-shadow:4px 4px 0 var(--purple),0 0 22px rgba(255,107,53,.6);}
+.flashon .champ-name{animation:namehit .7s ease-out;}
+.champ-stats{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:24px;
+  color:var(--text);margin-top:10px;letter-spacing:1px;}
+.champ-stats .u,.champ-stats .lbl{font-family:'Press Start 2P',monospace;font-size:11px;margin-left:4px;}
+.champ-stats .u{color:var(--yellow);}
+.champ-stats .lbl,.champ-stats .dot2{color:var(--text-dim);}
+.champ-stats .dot2{margin:0 10px;font-family:inherit;}
+.dash.empty .champ-stats{visibility:hidden;}
+.rows{display:flex;flex-direction:column;gap:6px;overflow:hidden;}
+.lrow{display:flex;align-items:center;gap:12px;padding:6px 12px;
+  border:2px solid var(--border);background:rgba(13,13,58,.5);}
+.lrow .rk{font-family:'Press Start 2P',monospace;font-size:15px;width:30px;color:var(--text-dim);}
+.lrow.silver .rk{color:var(--silver);}
+.lrow.bronze .rk{color:var(--bronze);}
+.lrow .nm{font-family:'Press Start 2P',monospace;font-size:14px;color:var(--text);
+  flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.lrow .sc{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:18px;color:var(--gold);}
+.lrow .vl{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--cyan);width:42px;text-align:right;}
+.rows-empty{font-family:'JetBrains Mono',monospace;font-size:15px;color:var(--text-dim);padding:10px 4px;}
+.dash-day .lrow{padding:4px 12px;}
+.dash-day .lrow .nm{font-size:12px;}
+.dash-day .lrow .sc{font-size:15px;}
+/* back-to-game link (outside the scaled stage) */
+#back-to-game{position:fixed;left:18px;bottom:14px;z-index:50;
+  font-family:'Press Start 2P',monospace;font-size:12px;letter-spacing:1px;
+  color:var(--cyan);text-decoration:none;padding:10px 16px;border:2px solid var(--cyan);
+  border-radius:8px;background:rgba(7,7,26,.72);box-shadow:0 0 14px rgba(0,255,255,.3);opacity:.85;}
+#back-to-game:hover{opacity:1;box-shadow:0 0 22px rgba(0,255,255,.6);}
 </style>
 </head>
 <body>
+<a id="back-to-game" href="./snyk-strike.html">&#9664; BACK TO GAME</a>
 <div id="stage">
   <div class="grid"></div>
   <div class="botbar"></div>
@@ -115,20 +168,33 @@ html,body{width:100%;height:100%;background:#000;overflow:hidden;font-family:'Pr
       <div class="live"><span class="dot"></span> LIVE LEADERBOARD</div>
     </div>
 
-    <div class="col-hero" id="hero">
-      <div class="newflag">&#9733; NEW LEADER &#9733;</div>
-      <div class="badge1" id="badge">#1 CHAMPION</div>
-      <div class="hero-name" id="hero-name">READY?</div>
-      <div class="hero-stats" id="hero-stats">
-        <div class="hs-score"><span id="hero-score">0</span><span class="u">PTS</span></div>
-        <div class="hs-vulns"><span id="hero-vulns">0</span><span class="lbl">VULNS FIXED</span></div>
+    <div class="dash dash-day" id="day">
+      <div class="dash-head"><svg class="crown crown-day" viewBox="0 0 120 88" aria-hidden="true"><path d="M6 72 L20 24 L46 50 L60 16 L74 50 L100 24 L114 72 Z"/><rect x="6" y="72" width="108" height="14"/></svg><span class="dash-title">TODAY</span></div>
+      <div class="champ">
+        <div class="champ-name" id="day-name">&#8212;</div>
+        <div class="champ-stats"><span id="day-score">0</span><span class="u">PTS</span><span class="dot2">&#183;</span><span id="day-vulns">0</span><span class="lbl">VULNS</span></div>
       </div>
-      <div class="sub" id="hero-sub" style="display:none;">BE THE FIRST ON THE BOARD</div>
+      <div class="rows" id="day-rows"></div>
     </div>
 
-    <div class="col-board">
-      <div class="board-title">HIGH SCORES</div>
-      <div id="board-rows"><div class="board-empty">Waiting for challengers&#8230;</div></div>
+    <div class="dash dash-week" id="week">
+      <div class="dash-head"><svg class="crown crown-week" viewBox="0 0 120 88" aria-hidden="true"><path d="M6 72 L20 24 L46 50 L60 16 L74 50 L100 24 L114 72 Z"/><rect x="6" y="72" width="108" height="14"/></svg><span class="dash-title">THIS WEEK</span></div>
+      <div class="champ">
+        <div class="champ-name" id="week-name">&#8212;</div>
+        <div class="champ-stats"><span id="week-score">0</span><span class="u">PTS</span><span class="dot2">&#183;</span><span id="week-vulns">0</span><span class="lbl">VULNS</span></div>
+      </div>
+      <div class="rows" id="week-rows"></div>
+    </div>
+
+    <div class="dash dash-all empty" id="hero">
+      <div class="dash-head"><svg class="crown crown-all" viewBox="0 0 120 88" aria-hidden="true"><path d="M6 72 L20 24 L46 50 L60 16 L74 50 L100 24 L114 72 Z"/><rect x="6" y="72" width="108" height="14"/></svg><span class="dash-title">ALL-TIME</span></div>
+      <div class="champ">
+        <div class="newflag">&#9733; NEW LEADER &#9733;</div>
+        <div class="champ-name" id="hero-name">READY?</div>
+        <div class="champ-stats"><span id="hero-score">0</span><span class="u">PTS</span><span class="dot2">&#183;</span><span id="hero-vulns">0</span><span class="lbl">VULNS</span></div>
+        <div class="sub" id="hero-sub" style="display:none;">BE THE FIRST ON THE BOARD</div>
+      </div>
+      <div class="rows" id="board-rows"></div>
     </div>
   </div>
   <div class="vignette"></div>
@@ -145,65 +211,99 @@ function load(){try{var s=localStorage.getItem(KEY);return s?JSON.parse(s):[];}c
 function esc(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function nf(n){return (typeof n==='number'?n:0).toLocaleString();}
 
-// shrink hero name until it fits its column
-function fitName(el){
-  el.style.fontSize='120px';
-  var max=el.parentElement.clientWidth-24;
-  var size=120;
-  while(el.scrollWidth>max && size>36){size-=4;el.style.fontSize=size+'px';}
+// shrink a champion name until it fits its panel
+function fitName(el,startPx){
+  el.style.fontSize=startPx+'px';
+  var max=el.parentElement.clientWidth-14,size=startPx;
+  while(el.scrollWidth>max && size>16){size-=2;el.style.fontSize=size+'px';}
 }
 
-var lastSig=null, first=true;
-function render(){
-  var lb=load();
-  var hero=document.getElementById('hero');
-  var nameEl=document.getElementById('hero-name');
-  var rowsEl=document.getElementById('board-rows');
+// ── Pacific-time (America/Los_Angeles) day/week boundaries ──
+// Daily resets at LA midnight, weekly at the most recent LA Sunday 00:00.
+// Derived from the wall-clock time in LA (DST-correct — not a fixed -8h),
+// so the windows roll over on their own: no cron / reset job needed.
+function laParts(ts){
+  var o={};
+  new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',hour12:false,
+    weekday:'short',hour:'2-digit',minute:'2-digit',second:'2-digit'})
+    .formatToParts(new Date(ts)).forEach(function(p){o[p.type]=p.value;});
+  return o;
+}
+function laStartOfDay(ts){
+  var o=laParts(ts);
+  var secs=(parseInt(o.hour,10)%24)*3600+parseInt(o.minute,10)*60+parseInt(o.second,10);
+  return ts-secs*1000;
+}
+function laStartOfWeek(ts){
+  var d=laStartOfDay(ts),guard=0;
+  while(laParts(d).weekday!=='Sun' && guard++<8){ d=laStartOfDay(d-3600000); }
+  return d;
+}
 
-  if(!lb.length){
-    hero.classList.add('empty');
-    nameEl.textContent='READY?';
-    document.getElementById('hero-sub').style.display='block';
-    rowsEl.innerHTML='<div class="board-empty">No scores yet &#8212; play to get on the board</div>';
-    lastSig=null;first=false;
+function byScore(a,b){return (b.score||0)-(a.score||0);}
+// All values are written with textContent (never innerHTML) so a score name
+// from localStorage can never be interpreted as HTML.
+function cell(cls,text){var d=document.createElement('div');d.className=cls;d.textContent=text;return d;}
+
+var lastSig=null, first=true;
+
+// Fill one dashboard panel: crowned champion (list[0]) + runner-up rows.
+function fillPanel(o,list){
+  var wrap=document.getElementById(o.wrap);
+  var nameEl=document.getElementById(o.name);
+  var rowsEl=document.getElementById(o.rows);
+  if(!list.length){
+    wrap.classList.add('empty');
+    nameEl.textContent=o.emptyName;
+    if(o.sub)document.getElementById(o.sub).style.display='block';
+    document.getElementById(o.score).textContent='0';
+    document.getElementById(o.vulns).textContent='0';
+    rowsEl.textContent='';rowsEl.appendChild(cell('rows-empty',o.empty));
+    if(o.flag)lastSig=null;
     return;
   }
-  hero.classList.remove('empty');
-  document.getElementById('hero-sub').style.display='none';
-
-  var top=lb[0];
-  document.getElementById('hero-score').textContent=nf(top.score);
-  document.getElementById('hero-vulns').textContent=(top.vulns||0);
-  nameEl.textContent=(top.name||'ANON');
-  fitName(nameEl);
-
-  // new-leader flash (skip on very first paint)
-  var sig=(top.name||'')+'|'+top.score;
-  if(!first && sig!==lastSig){
-    hero.classList.remove('flashon');void hero.offsetWidth;hero.classList.add('flashon');
+  wrap.classList.remove('empty');
+  if(o.sub)document.getElementById(o.sub).style.display='none';
+  var champ=list[0];
+  nameEl.textContent=(champ.name||'ANON');
+  document.getElementById(o.score).textContent=nf(champ.score);
+  document.getElementById(o.vulns).textContent=(parseInt(champ.vulns,10)||0);
+  fitName(nameEl,o.startPx);
+  if(o.flag){ // new-leader flash on the all-time champion (skip first paint)
+    var sig=(champ.name||'')+'|'+champ.score;
+    if(!first && sig!==lastSig){wrap.classList.remove('flashon');void wrap.offsetWidth;wrap.classList.add('flashon');}
+    lastSig=sig;
   }
-  lastSig=sig;first=false;
-
-  // runners up 2..6 — built with DOM nodes + textContent (never innerHTML)
-  // so score data from localStorage can never be interpreted as HTML.
-  var medal={2:'silver',3:'bronze'};
-  function cell(cls,text){var d=document.createElement('div');d.className=cls;d.textContent=text;return d;}
-  var others=lb.slice(1,6);
+  var others=list.slice(1,o.max),medal={2:'silver',3:'bronze'};
   rowsEl.textContent='';
-  if(!others.length){
-    rowsEl.appendChild(cell('board-empty','Only one challenger so far…'));
-  }else{
-    others.forEach(function(e,i){
-      var r=i+2;
-      var row=document.createElement('div');
-      row.className=('row '+(medal[r]||'')).trim();
-      row.appendChild(cell('rk',r));
-      row.appendChild(cell('nm',e.name||'ANON'));
-      row.appendChild(cell('sc',nf(e.score)));
-      row.appendChild(cell('vl',(parseInt(e.vulns,10)||0)+'v'));
-      rowsEl.appendChild(row);
-    });
-  }
+  if(!others.length){rowsEl.appendChild(cell('rows-empty','Only one challenger so far…'));return;}
+  others.forEach(function(e,i){
+    var r=i+2,row=document.createElement('div');
+    row.className=('lrow '+(medal[r]||'')).trim();
+    row.appendChild(cell('rk',r));
+    row.appendChild(cell('nm',e.name||'ANON'));
+    row.appendChild(cell('sc',nf(e.score)));
+    row.appendChild(cell('vl',(parseInt(e.vulns,10)||0)+'v'));
+    rowsEl.appendChild(row);
+  });
+}
+
+function render(){
+  var all=load().slice().sort(byScore);
+  var now=Date.now(),dayStart=laStartOfDay(now),weekStart=laStartOfWeek(now);
+  var daily=all.filter(function(e){return typeof e.date==='number' && e.date>=dayStart;});
+  var weekly=all.filter(function(e){return typeof e.date==='number' && e.date>=weekStart;});
+
+  // All-time keeps the #hero-* / #board-rows contract (top 5).
+  fillPanel({wrap:'hero',name:'hero-name',score:'hero-score',vulns:'hero-vulns',sub:'hero-sub',
+    rows:'board-rows',emptyName:'READY?',empty:'No scores yet — play to get on the board',
+    max:5,flag:true,startPx:46}, all.slice(0,5));
+  fillPanel({wrap:'week',name:'week-name',score:'week-score',vulns:'week-vulns',
+    rows:'week-rows',emptyName:'—',empty:'No scores this week yet',max:5,startPx:34}, weekly.slice(0,5));
+  fillPanel({wrap:'day',name:'day-name',score:'day-score',vulns:'day-vulns',
+    rows:'day-rows',emptyName:'—',empty:'No scores today yet',max:10,startPx:30}, daily.slice(0,10));
+
+  first=false;
 }
 
 // live: fires when the GAME window (same origin) writes a score

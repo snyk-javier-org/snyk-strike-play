@@ -33,7 +33,15 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .stat-box{background:var(--bg2);border:3px solid var(--border2);padding:10px 18px;text-align:center;box-shadow:3px 3px 0 var(--border);min-width:100px;}
 .stat-num{font-size:27px;color:var(--orange);text-shadow:0 0 12px var(--orange);display:block;margin-bottom:6px;}
 .stat-lbl{font-size:16px;color:var(--text-dim);letter-spacing:1px;display:block;}
-.insert-coin{font-size:26px;color:var(--yellow);text-shadow:0 0 15px var(--yellow);letter-spacing:2px;animation:blink 1s step-end infinite;padding:14px 28px;border:3px solid var(--yellow);box-shadow:3px 3px 0 rgba(255,224,0,0.3);}
+.insert-coin{font-size:26px;color:var(--yellow);text-shadow:0 0 15px var(--yellow);letter-spacing:2px;animation:blink 1s step-end infinite;padding:14px 28px;border:3px solid var(--yellow);box-shadow:3px 3px 0 rgba(255,224,0,0.3);cursor:pointer;}
+.menu-btns{display:flex;gap:16px;margin-top:16px;justify-content:center;}
+.menu-btn{font-size:18px;letter-spacing:2px;padding:12px 24px;border:3px solid currentColor;cursor:pointer;font-family:inherit;transition:transform .1s ease,box-shadow .1s ease;}
+.menu-btn:hover{transform:translateY(-2px);}
+.menu-btn.practice{color:var(--green);text-shadow:0 0 10px var(--green);box-shadow:3px 3px 0 rgba(57,255,20,0.3);}
+.menu-btn.tutorial{color:var(--magenta);text-shadow:0 0 10px var(--magenta);box-shadow:3px 3px 0 rgba(224,64,251,0.3);}
+.learn-link{display:inline-block;margin-left:10px;font-size:11px;letter-spacing:1px;color:var(--cyan);text-decoration:none;border:1px solid var(--cyan);padding:2px 8px;vertical-align:middle;opacity:.85;flex:0 0 auto;}
+.learn-link:hover{opacity:1;box-shadow:0 0 10px rgba(0,255,255,.5);}
+#mute-btn{position:absolute;top:16px;right:16px;z-index:60;width:48px;height:48px;line-height:44px;text-align:center;font-size:22px;cursor:pointer;border:2px solid #2A2A60;background:rgba(7,7,26,0.6);user-select:none;}
 @keyframes blink{50%{opacity:0;}}
 .attract-url{font-size:18px;color:var(--text-dim);letter-spacing:2px;}
 .attract-url span{color:var(--orange);}
@@ -326,6 +334,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 <!-- ATTRACT CANVAS BG -->
 <div id="viewport">
 <canvas id="attract-canvas"></canvas>
+<div id="mute-btn" onclick="SFX.toggleMute()" title="Toggle sound">🔊</div>
 
 <!-- ATTRACT -->
 <div id="attract">
@@ -344,7 +353,11 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
     <div class="attract-stats">
       <div class="stat-box"><span class="stat-num" id="lb-top">—</span><span class="stat-lbl" id="lb-top-lbl">HI-SCORE</span></div>
     </div>
-    <div class="insert-coin" onclick="showTutorial()">▶ TAP TO PLAY ◀</div>
+    <div class="insert-coin" onclick="startNormal()">▶ TAP TO PLAY ◀</div>
+    <div class="menu-btns">
+      <div class="menu-btn practice" onclick="startPractice()">🐢 PRACTICE</div>
+      <div class="menu-btn tutorial" onclick="showTutorialOnly()">📖 TUTORIAL</div>
+    </div>
     <div class="attract-url">POWERED BY <span>SNYK.IO</span></div>
   </div>
   <div class="marquee-wrap"><span class="marquee-inner">⚡ SCAN · FIX · BUILD &nbsp;&nbsp;&nbsp; 🔴 HARDCODED CREDENTIALS &nbsp;&nbsp;&nbsp; 🔴 SQL INJECTION &nbsp;&nbsp;&nbsp; 🔴 BROKEN AUTH &nbsp;&nbsp;&nbsp; 🔴 XSS &nbsp;&nbsp;&nbsp; 🔴 EXPOSED API KEYS &nbsp;&nbsp;&nbsp; CAN YOU FIND THEM BEFORE THE BLOCK LANDS? &nbsp;&nbsp;&nbsp; ⚡ SNYK.IO &nbsp;&nbsp;&nbsp;</span></div>
@@ -526,6 +539,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
         <div class="code-header">
           <div class="code-title" id="filename">database.js</div>
           <div class="code-vuln-type" id="code-vuln-type"></div>
+          <a class="learn-link" id="learn-link" target="_blank" rel="noopener" href="https://learn.snyk.io/catalog/">LEARN ↗</a>
           <div class="vuln-badge" id="vuln-badge">CRITICAL</div>
         </div>
         <div class="code-body" id="code-body"></div>
@@ -576,6 +590,89 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 <div class="flash-overlay" id="flash-overlay"></div>
 <div class="feedback-toast" id="feedback-toast"></div>
 </div><!--/viewport-->
+
+<script>
+// ── AUDIO (Web Audio, fully synthesized — no files, no network) ──
+// Chiptune SFX + the classic Tetris theme "Korobeiniki" (public-domain
+// Russian folk melody). The AudioContext is created lazily on the first
+// user gesture (autoplay policy + keeps the automated boot test error-free).
+var SFX=(function(){
+  var AC=window.AudioContext||window.webkitAudioContext;
+  var ctx=null,master=null,music=null,musicTimer=null,noteIdx=0,nextT=0;
+  var muted=false; try{muted=localStorage.getItem('snyk_muted')==='1';}catch(e){}
+  var VOL=0.6;
+
+  function unlock(){
+    if(!AC)return null;
+    if(!ctx){
+      try{
+        ctx=new AC();
+        master=ctx.createGain();master.gain.value=muted?0:VOL;master.connect(ctx.destination);
+        music=ctx.createGain();music.gain.value=0.15;music.connect(master);
+      }catch(e){ctx=null;return null;}
+    }
+    if(ctx.state==='suspended'){try{ctx.resume();}catch(e){}}
+    return ctx;
+  }
+
+  var A4=440,NAMES={C:-9,D:-7,E:-5,F:-4,G:-2,A:0,B:2};
+  function freq(n){
+    if(n==='R')return 0;
+    var m=/^([A-G])(#?)(\d)$/.exec(n);if(!m)return 0;
+    var semi=NAMES[m[1]]+(m[2]?1:0)+(parseInt(m[3],10)-4)*12;
+    return A4*Math.pow(2,semi/12);
+  }
+  function tone(f,start,dur,type,peak,dest){
+    if(!ctx||!(f>0))return;
+    var o=ctx.createOscillator(),g=ctx.createGain();
+    o.type=type||'square';o.frequency.value=f;
+    peak=peak==null?0.5:peak;
+    g.gain.setValueAtTime(0.0001,start);
+    g.gain.exponentialRampToValueAtTime(peak,start+0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001,start+dur);
+    o.connect(g);g.connect(dest||master);
+    o.start(start);o.stop(start+dur+0.02);
+  }
+
+  // Korobeiniki (Tetris "Type A" theme), first two phrases. [note, eighths]
+  var STEP=0.16; // seconds per eighth note
+  var MELODY=[
+    ['E5',2],['B4',1],['C5',1],['D5',2],['C5',1],['B4',1],
+    ['A4',2],['A4',1],['C5',1],['E5',2],['D5',1],['C5',1],
+    ['B4',3],['C5',1],['D5',2],['E5',2],
+    ['C5',2],['A4',2],['A4',2],['R',2],
+    ['D5',2],['F5',1],['A5',2],['G5',1],['F5',1],
+    ['E5',3],['C5',1],['E5',2],['D5',1],['C5',1],
+    ['B4',2],['B4',1],['C5',1],['D5',2],['E5',2],
+    ['C5',2],['A4',2],['A4',2],['R',2]
+  ];
+  function scheduleMusic(){
+    if(!ctx)return;
+    while(nextT<ctx.currentTime+0.25){
+      var tok=MELODY[noteIdx%MELODY.length],f=freq(tok[0]),dur=tok[1]*STEP;
+      if(f>0){ tone(f,nextT,dur*0.9,'square',0.5,music); tone(f/2,nextT,dur*0.9,'triangle',0.28,music); }
+      nextT+=dur;noteIdx++;
+    }
+  }
+  function startMusic(){ if(!unlock()||musicTimer)return; noteIdx=0;nextT=ctx.currentTime+0.06; scheduleMusic(); musicTimer=setInterval(scheduleMusic,60); }
+  function stopMusic(){ if(musicTimer){clearInterval(musicTimer);musicTimer=null;} }
+
+  function seq(notes,type,peak){ var t=unlock();if(!t)return;var s=ctx.currentTime; notes.forEach(function(n){tone(freq(n[0]),s+n[1],n[2]||0.16,type||'square',peak==null?0.5:peak);}); }
+  var api={
+    unlock:unlock,startMusic:startMusic,stopMusic:stopMusic,
+    correct:function(){seq([['C5',0,0.13],['E5',0.07,0.13],['G5',0.14,0.18]]);},
+    wrong:function(){var t=unlock();if(!t)return;var s=ctx.currentTime;tone(120,s,0.3,'sawtooth',0.45);tone(90,s+0.03,0.3,'square',0.3);},
+    lock:function(){var t=unlock();if(!t)return;tone(150,ctx.currentTime,0.08,'square',0.4);},
+    line:function(n){seq((n>=4?['C5','E5','G5','C6','E6']:['C5','E5','G5']).map(function(nn,i){return [nn,i*0.06,0.16];}),'square',0.5);},
+    level:function(){seq([['G4',0,0.18],['C5',0.1,0.18],['E5',0.2,0.18],['G5',0.3,0.24]]);},
+    over:function(){stopMusic();seq([['G4',0,0.3],['E4',0.18,0.3],['C4',0.36,0.3],['G3',0.54,0.4]],'sawtooth',0.45);},
+    submit:function(){seq([['E5',0,0.16],['A5',0.1,0.22]]);},
+    toggleMute:function(){muted=!muted;try{localStorage.setItem('snyk_muted',muted?'1':'0');}catch(e){}if(master)master.gain.value=muted?0:VOL;var b=document.getElementById('mute-btn');if(b)b.textContent=muted?'🔇':'🔊';return muted;},
+    initBtn:function(){var b=document.getElementById('mute-btn');if(b)b.textContent=muted?'🔇':'🔊';}
+  };
+  return api;
+})();
+</script>
 
 <script>
 // ── ATTRACT CANVAS ───────────────────────────────────────────
@@ -666,16 +763,27 @@ const demoTut=(function(){
 })();
 
 let tutStep=1;const TUT_TOTAL=5;
+let practiceMode=false;   // slower fall speed for beginners
+let tutorialOnly=false;   // TUTORIAL button: show the 5 screens then return to menu
+
+// Attract-screen entry points. TAP TO PLAY / PRACTICE go straight into the game
+// (no forced tutorial); TUTORIAL just walks the 5 help screens and comes back.
+function startNormal(){SFX.unlock();practiceMode=false;startGame();}
+function startPractice(){SFX.unlock();practiceMode=true;startGame();}
+function showTutorialOnly(){SFX.unlock();tutorialOnly=true;showTutorial();}
+
 function showTutorial(){tutStep=1;renderTutStep();document.getElementById('tutorial').style.display='flex';}
-function skipTutorial(){demoTut.stop();document.getElementById('tutorial').style.display='none';startGame();}
-function tutNext(){if(tutStep<TUT_TOTAL){tutStep++;renderTutStep();}else{demoTut.stop();document.getElementById('tutorial').style.display='none';startGame();}}
+// End the tutorial: in tutorial-only mode return to the attract menu, otherwise play.
+function endTutorial(){demoTut.stop();document.getElementById('tutorial').style.display='none';if(tutorialOnly){tutorialOnly=false;goToAttract();}else{startGame();}}
+function skipTutorial(){endTutorial();}
+function tutNext(){if(tutStep<TUT_TOTAL){tutStep++;renderTutStep();}else{endTutorial();}}
 function tutPrev(){if(tutStep>1){tutStep--;renderTutStep();}}
 function renderTutStep(){
   for(let i=1;i<=TUT_TOTAL;i++){document.getElementById('tut-'+i).classList.toggle('active',i===tutStep);document.getElementById('dot-'+i).classList.toggle('active',i===tutStep);}
   document.getElementById('tut-step-pip').textContent=tutStep+' / '+TUT_TOTAL;
   document.getElementById('tut-prev-btn').style.display=tutStep>1?'block':'none';
   const nb=document.getElementById('tut-next-btn');
-  nb.textContent=tutStep===TUT_TOTAL?'PLAY >':'NEXT >';
+  nb.textContent=tutStep===TUT_TOTAL?(tutorialOnly?'DONE >':'PLAY >'):'NEXT >';
   nb.className='tut-btn '+(tutStep===TUT_TOTAL?'start':'next');
   if(tutStep===1){demoTut.start();}else{demoTut.stop();}
 }
@@ -753,6 +861,7 @@ function arenaSweep(){
     const bonus=[0,100,300,600,1200][Math.min(cleared,4)];
     state.score=(state.score||0)+bonus; if(typeof updateScore==='function')updateScore();
     lineClearFX(cleared);
+    SFX.line(cleared);
   }
   return cleared;
 }
@@ -853,6 +962,7 @@ function landPiece(p){
   if(p.fixed)return;
   p.fixed=true; stepIdx++;
   mergeAt(p.matrix,p.pos.x,p.pos.y);   // miss/timeout: builds up, NO clear
+  SFX.lock();
   tetrisDraw();
 }
 function tetrisLoop(ts){
@@ -948,6 +1058,29 @@ const CHALLENGE_POOL=[{"type":"SQL INJECTION","severity":"CRITICAL","filename":"
 // ── OFFLINE CHALLENGE PICKER ──────────────────────────────────
 // Pick N distinct challenges from the pool, avoiding recent repeats.
 const OWASP_INDEX={"SQL INJECTION":{"t10":"A03","t10n":"Injection","llm":"LLM05","llmn":"Improper Output Handling"},"NOSQL INJECTION":{"t10":"A03","t10n":"Injection","llm":"LLM05","llmn":"Improper Output Handling"},"COMMAND INJECTION":{"t10":"A03","t10n":"Injection","llm":"LLM05","llmn":"Improper Output Handling"},"CODE INJECTION (EVAL)":{"t10":"A03","t10n":"Injection","llm":"LLM05","llmn":"Improper Output Handling"},"CROSS-SITE SCRIPTING":{"t10":"A03","t10n":"Injection","llm":"LLM05","llmn":"Improper Output Handling"},"SERVER-SIDE TEMPLATE INJECTION":{"t10":"A03","t10n":"Injection","llm":"LLM05","llmn":"Improper Output Handling"},"MISSING INPUT VALIDATION":{"t10":"A03","t10n":"Injection"},"PATH TRAVERSAL":{"t10":"A01","t10n":"Broken Access Control"},"ZIP SLIP":{"t10":"A01","t10n":"Broken Access Control"},"INSECURE DIRECT OBJECT REFERENCE":{"t10":"A01","t10n":"Broken Access Control"},"OPEN REDIRECT":{"t10":"A01","t10n":"Broken Access Control"},"WEAK CRYPTOGRAPHY":{"t10":"A02","t10n":"Cryptographic Failures"},"WEAK PASSWORD HASH":{"t10":"A02","t10n":"Cryptographic Failures"},"PLAINTEXT PASSWORD STORAGE":{"t10":"A02","t10n":"Cryptographic Failures","llm":"LLM02","llmn":"Sensitive Information Disclosure"},"INSECURE RANDOMNESS":{"t10":"A02","t10n":"Cryptographic Failures"},"IMPROPER CERTIFICATE VALIDATION":{"t10":"A02","t10n":"Cryptographic Failures"},"REGEX DENIAL OF SERVICE (ReDoS)":{"t10":"A04","t10n":"Insecure Design","llm":"LLM10","llmn":"Unbounded Consumption"},"UNRESTRICTED FILE UPLOAD":{"t10":"A04","t10n":"Insecure Design"},"XML EXTERNAL ENTITY (XXE)":{"t10":"A05","t10n":"Security Misconfiguration"},"CORS MISCONFIGURATION":{"t10":"A05","t10n":"Security Misconfiguration"},"CLICKJACKING":{"t10":"A05","t10n":"Security Misconfiguration"},"INSECURE COOKIE":{"t10":"A05","t10n":"Security Misconfiguration"},"EXPOSED DEBUG ENDPOINT":{"t10":"A05","t10n":"Security Misconfiguration"},"EXPOSED API KEY":{"t10":"A07","t10n":"Identification & Authentication Failures","llm":"LLM02","llmn":"Sensitive Information Disclosure"},"HARDCODED CREDENTIAL":{"t10":"A07","t10n":"Identification & Authentication Failures","llm":"LLM02","llmn":"Sensitive Information Disclosure"},"HARDCODED SECRET":{"t10":"A07","t10n":"Identification & Authentication Failures","llm":"LLM02","llmn":"Sensitive Information Disclosure"},"BROKEN AUTHENTICATION":{"t10":"A07","t10n":"Identification & Authentication Failures"},"TIMING ATTACK":{"t10":"A07","t10n":"Identification & Authentication Failures"},"INSECURE DESERIALIZATION":{"t10":"A08","t10n":"Software & Data Integrity Failures","llm":"LLM04","llmn":"Data and Model Poisoning"},"PROTOTYPE POLLUTION":{"t10":"A08","t10n":"Software & Data Integrity Failures","llm":"LLM04","llmn":"Data and Model Poisoning"},"MASS ASSIGNMENT":{"t10":"A08","t10n":"Software & Data Integrity Failures"},"SENSITIVE DATA IN LOGS":{"t10":"A09","t10n":"Security Logging & Monitoring Failures","llm":"LLM02","llmn":"Sensitive Information Disclosure"},"SERVER-SIDE REQUEST FORGERY":{"t10":"A10","t10n":"Server-Side Request Forgery (SSRF)","llm":"LLM06","llmn":"Excessive Agency"},"SSRF":{"t10":"A10","t10n":"Server-Side Request Forgery (SSRF)","llm":"LLM06","llmn":"Excessive Agency"}};
+// Snyk Learn lesson per vulnerability type (from learn.snyk.io/catalog).
+// Types with no dedicated lesson fall back to the catalog.
+var LEARN_BASE='https://learn.snyk.io/lesson/';
+var LEARN_CATALOG='https://learn.snyk.io/catalog/';
+var LEARN_SLUGS={
+  'SQL INJECTION':'sql-injection','NOSQL INJECTION':'nosql-injection-attack',
+  'CODE INJECTION (EVAL)':'malicious-code-injection','CROSS-SITE SCRIPTING':'xss',
+  'SERVER-SIDE TEMPLATE INJECTION':'express-language-injection','MISSING INPUT VALIDATION':'improper-input-validation',
+  'PATH TRAVERSAL':'directory-traversal','ZIP SLIP':'directory-traversal',
+  'INSECURE DIRECT OBJECT REFERENCE':'broken-object-level-authorization','OPEN REDIRECT':'open-redirect',
+  'WEAK CRYPTOGRAPHY':'insecure-hash','WEAK PASSWORD HASH':'insecure-hash',
+  'PLAINTEXT PASSWORD STORAGE':'missing-encryption','INSECURE RANDOMNESS':'insecure-randomness',
+  'IMPROPER CERTIFICATE VALIDATION':'man-in-the-middle-attack','REGEX DENIAL OF SERVICE (ReDoS)':'redos',
+  'UNRESTRICTED FILE UPLOAD':'unrestricted-file-upload','XML EXTERNAL ENTITY (XXE)':'xxe',
+  'CORS MISCONFIGURATION':'cross-origin-resource-sharing','INSECURE COOKIE':'cleartext-sensitive-information-in-cookie',
+  'EXPOSED DEBUG ENDPOINT':'insecure-defaults','EXPOSED API KEY':'hardcoded-secrets',
+  'HARDCODED CREDENTIAL':'hardcoded-secrets','HARDCODED SECRET':'hardcoded-secrets',
+  'BROKEN AUTHENTICATION':'broken-authentication','INSECURE DESERIALIZATION':'insecure-deserialization',
+  'PROTOTYPE POLLUTION':'prototype-pollution','MASS ASSIGNMENT':'mass-assignment',
+  'SENSITIVE DATA IN LOGS':'logging-vulnerabilities',
+  'SERVER-SIDE REQUEST FORGERY':'ssrf-server-side-request-forgery','SSRF':'ssrf-server-side-request-forgery'
+};
+function learnUrl(type){var s=LEARN_SLUGS[type];return s?(LEARN_BASE+s+'/'):LEARN_CATALOG;}
 function owaspOf(ch){var m=OWASP_INDEX[ch.type];return m?m.t10:"A00";}
 function owaspLabel(ch){var m=OWASP_INDEX[ch.type];if(!m)return "";var s="OWASP "+m.t10+" "+m.t10n;if(m.llm)s+="  \u2022  OWASP-LLM "+m.llm+" "+m.llmn;return s;}
 // ── OFFLINE CHALLENGE PICKER (OWASP-balanced) ──────────────────
@@ -1001,6 +1134,7 @@ function startGame(){
   loadChallenge();
   if(!tetris.animFrame) requestAnimationFrame(tetrisLoop);
   kioskActive=true; bumpIdle();
+  SFX.startMusic();
 }
 
 function loadChallenge(){
@@ -1024,9 +1158,10 @@ function loadChallenge(){
   tetris.activePiece=makeActivePiece();
 
   const lvlName=lvl.name;
-  document.getElementById('level-badge').textContent='LVL '+(state.level+1);
+  document.getElementById('level-badge').textContent='LVL '+(state.level+1)+(practiceMode?' · PRACTICE':'');
   document.getElementById('filename').textContent=challenges[0].filename;
   {const _vt=document.getElementById('code-vuln-type');if(_vt)_vt.textContent=challenges[0].type+' · OWASP '+owaspOf(challenges[0]);}
+  {const _ll=document.getElementById('learn-link');if(_ll)_ll.href=learnUrl(challenges[0].type);}
   document.getElementById('vuln-badge').textContent=challenges[0].severity;
   document.getElementById('vuln-badge').classList.remove('visible');
   document.getElementById('vuln-counter-label').textContent='VULN 1 OF '+vulnCount;
@@ -1176,6 +1311,7 @@ function applyFix(fixIdx){
       setTimeout(()=>{c.innerHTML='<span style="color:var(--green)">'+escapeHtml(fix.code)+'</span>';},200);
     }
     flash('#39FF14',0.07);
+    SFX.correct();
     state.roundXPItems.push({label:'Correct fix',xp:600});
 
     const allFixed=state.vulnStates.every(v=>v.fixed);
@@ -1209,6 +1345,7 @@ function applyFix(fixIdx){
         renderCode(nextCh.lines,nextVI);
         document.getElementById('filename').textContent=nextCh.filename;
         {const _vt=document.getElementById('code-vuln-type');if(_vt)_vt.textContent=nextCh.type+' · OWASP '+owaspOf(nextCh);}
+        {const _ll=document.getElementById('learn-link');if(_ll)_ll.href=learnUrl(nextCh.type);}
         document.getElementById('vuln-badge').textContent=nextCh.severity;
         document.getElementById('vuln-badge').classList.remove('visible');
         document.getElementById('vuln-counter-label').textContent='VULN '+(nextVI+1)+' OF '+state.vulnsToFix;
@@ -1237,6 +1374,7 @@ function applyFix(fixIdx){
 
     const opt=document.querySelector('.fix-option[data-fix-idx="'+fixIdx+'"]');
     if(opt)opt.classList.add('wrong');
+    SFX.wrong();
     state.roundXPItems.push({label:'Wrong fix',xp:-100});
     loseLife('NOT THE FIX');
   }
@@ -1275,7 +1413,8 @@ function showRoundResult(success){
 function levelConfig(level){
   const disp=level+1;
   const name=LEVELS[level % LEVELS.length].name;
-  const dropMs=Math.max(260, 900 - disp*32);
+  let dropMs=Math.max(260, 900 - disp*32);
+  if(practiceMode) dropMs=Math.round(dropMs*2.4);   // beginner-friendly slow mode
   const vulnCount = disp<=4 ? 1 : (disp<=9 ? 2 : 3);
   return {name,dropMs,vulnCount};
 }
@@ -1337,8 +1476,10 @@ function nextRound(){
   if(disp%8===0){                                // refill at every 8-level milestone
     state.lives=state.livesCap;
     levelNotice('⬆ LEVEL '+disp+' — LIVES REFILLED', state.livesCap+' LIVES RESTORED','#39FF14');
+    SFX.level();
   } else if(levelConfig(state.level).vulnCount>prevVuln){
     levelNotice('⬆ LEVEL '+disp, levelConfig(state.level).vulnCount+' VULNS PER WAVE · FASTER','#FF6B35');
+    SFX.level();
   }
   if(state.lives>state.livesCap) state.lives=state.livesCap;
   updateScore();
@@ -1349,6 +1490,7 @@ function nextRound(){
 // ── GAME OVER ─────────────────────────────────────────────────
 function gameOver(){
   clearAllHintTimers();clearTetrisTimers();state.gameActive=false;
+  SFX.over();
   setTimeout(()=>{
     const tEl=document.querySelector('.go-title'), sEl=document.querySelector('.go-sub');
     if(tEl){tEl.textContent='SYSTEM COMPROMISED';tEl.style.color='var(--red)';}
@@ -1386,8 +1528,9 @@ function submitScore(){
   const name=document.getElementById('name-input').value.trim().toUpperCase()||'ANON';
   const lb=loadLeaderboard();
   lb.push({name,score:state.score,vulns:state.vulnsFixed,date:Date.now()});
-  lb.sort((a,b)=>b.score-a.score);lb.splice(20);
+  lb.sort((a,b)=>b.score-a.score);lb.splice(500);   // keep enough history for the daily/weekly boards
   saveLeaderboard(lb);
+  SFX.submit();
   document.getElementById('name-entry').style.display='none';
   renderLeaderboard();updateAttract();
 }
@@ -1405,6 +1548,7 @@ function goToAttract(){
   document.getElementById('game').style.display='none';
   document.getElementById('attract').style.display='flex';
   clearTetrisTimers();updateAttract();
+  SFX.stopMusic();
 }
 
 // ── UI HELPERS ────────────────────────────────────────────────
@@ -1538,6 +1682,7 @@ document.addEventListener('pointerdown',bumpIdle,true);
 document.addEventListener('keydown',bumpIdle,true);
 
 updateAttract();
+SFX.initBtn();
 
 
 // Scale the whole 1920x1080 design canvas to fit any window (16:9 or letterboxed).
