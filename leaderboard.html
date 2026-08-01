@@ -208,7 +208,7 @@ html,body{width:100%;height:100%;background:#000;overflow:hidden;font-family:'Pr
 var KEY='snyk_lb';
 // Global leaderboard API (Render). The static banner runs on GitHub Pages and
 // calls this cross-origin; if it's unreachable we fall back to local scores.
-var LB_API='https://snyk-strike-api.onrender.com';
+var LB_API='https://snyk-strike-f7a609bc3cc9.herokuapp.com';
 var stage=document.getElementById('stage');
 function fit(){var s=Math.min(window.innerWidth/2288,window.innerHeight/624);stage.style.transform='translate(-50%,-50%) scale('+s+')';}
 window.addEventListener('resize',fit);fit();
@@ -334,18 +334,28 @@ window.addEventListener('storage',function(e){if(!e.key||e.key===KEY)refresh();}
 setInterval(refresh,4000);
 refresh();
 
-// hidden operator reset: press Shift+R three times within 2s to clear the board
+// Hidden operator reset for a fresh event start: press Shift+R three times
+// within 2s → prompt for the reset token → clear the GLOBAL board via the
+// server (POST /api/reset, guarded by RESET_TOKEN). The token is typed at reset
+// time and never stored in this page, so the public display can't leak it.
 (function(){
   var taps=[], flashEl=null;
-  function flash(){
-    if(!flashEl){flashEl=document.createElement('div');flashEl.className='reset-flash';flashEl.textContent='SCORES CLEARED';document.getElementById('stage').appendChild(flashEl);}
-    flashEl.classList.remove('show');void flashEl.offsetWidth;flashEl.classList.add('show');
+  function flash(msg){
+    if(!flashEl){flashEl=document.createElement('div');flashEl.className='reset-flash';document.getElementById('stage').appendChild(flashEl);}
+    flashEl.textContent=msg;flashEl.classList.remove('show');void flashEl.offsetWidth;flashEl.classList.add('show');
   }
   window.addEventListener('keydown',function(e){
     if(!e.shiftKey || (e.key||'').toLowerCase()!=='r') return;
     var now=(window.performance&&performance.now)?performance.now():+new Date();
     taps.push(now); taps=taps.filter(function(t){return now-t<=2000;});
-    if(taps.length>=3){ taps=[]; try{localStorage.removeItem(KEY);}catch(_){}; first=true; lastSig=null; render(); flash(); }
+    if(taps.length<3) return;
+    taps=[];
+    var token=window.prompt('OPERATOR RESET — clear the ENTIRE global leaderboard?\nEnter reset token to confirm (Cancel to abort):');
+    if(token==null||token==='') return;
+    fetch(LB_API+'/api/reset',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:token})})
+      .then(function(r){return r.ok?r.json():Promise.reject(r.status);})
+      .then(function(){ try{localStorage.removeItem(KEY);}catch(_){}; first=true; lastSig=null; refresh(); flash('SCORES CLEARED'); })
+      .catch(function(st){ flash(st===403?'RESET DENIED — BAD TOKEN':'RESET FAILED'); });
   });
 })();
 

@@ -1613,7 +1613,7 @@ function saveLeaderboard(lb){try{localStorage.setItem('snyk_lb',JSON.stringify(l
 
 // Global leaderboard API (Render). The game runs on GitHub Pages and calls this
 // cross-origin; every read falls back to local scores if the API is unreachable.
-var LB_API='https://snyk-strike-api.onrender.com';
+var LB_API='https://snyk-strike-f7a609bc3cc9.herokuapp.com';
 function fetchBoard(cb){
   fetch(LB_API+'/api/leaderboard',{cache:'no-store'})
     .then(function(r){return r.ok?r.json():Promise.reject();}).then(cb).catch(function(){});
@@ -1860,7 +1860,7 @@ updateAttract();
 SFX.initBtn();
 
 // App version (MAJOR.MINOR.YYYYMMDDHHMM in PST) — keep in sync with package.json.
-var APP_VERSION='1.1.202607300801';
+var APP_VERSION='1.1.202607312221';
 {var _v=document.getElementById('app-version');if(_v)_v.textContent='v'+APP_VERSION;}
 
 // Keyboard: ↑/↓ move between the attract-screen buttons, Enter activates.
