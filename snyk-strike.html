@@ -279,6 +279,8 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .go-score-lbl{font-size:17px;color:var(--text-dim);letter-spacing:3px;}
 .go-vulns{font-size:18px;color:var(--magenta);text-shadow:0 0 10px var(--magenta);margin-bottom:6px;}
 .go-compare{font-size:19px;color:var(--cyan);text-shadow:0 0 10px rgba(0,255,255,0.4);max-width:820px;line-height:1.5;margin:2px auto 8px;padding:0 16px;}
+.go-hint{margin-top:14px;font-size:22px;color:var(--green);letter-spacing:2px;text-shadow:0 0 12px rgba(57,255,20,0.6);animation:blink 1.1s step-end infinite;}
+.go-hint span{display:block;margin-top:8px;font-size:15px;color:var(--text-dim);letter-spacing:1px;text-shadow:none;animation:none;}
 .lb-wrap{width:340px;}
 .lb-heading{font-size:18px;color:var(--yellow);text-align:center;margin-bottom:10px;letter-spacing:2px;text-shadow:2px 2px 0 #AA9000;}
 .lb-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:2px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:20px;}
@@ -290,7 +292,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .lb-score{color:var(--orange);font-weight:700;}
 .lb-vulns{font-size:18px;color:var(--text-dim);}
 .name-entry{display:flex;gap:8px;margin:7px 0;}
-.name-input{font-family:'Press Start 2P',monospace;font-size:20px;background:var(--bg3);border:3px solid var(--orange);color:var(--yellow);padding:9px 12px;width:190px;letter-spacing:3px;text-transform:uppercase;box-shadow:3px 3px 0 rgba(255,107,53,0.3);}
+.name-input{font-family:'Press Start 2P',monospace;font-size:18px;background:var(--bg3);border:3px solid var(--orange);color:var(--yellow);padding:9px 12px;width:460px;max-width:80vw;letter-spacing:1px;text-transform:uppercase;box-shadow:3px 3px 0 rgba(255,107,53,0.3);}
 .name-input:focus{outline:none;box-shadow:3px 3px 0 var(--orange);}
 .name-input::placeholder{color:var(--text-dim);}
 .name-submit{font-family:'Press Start 2P',monospace;font-size:18px;background:var(--orange);color:#000;border:3px solid rgba(255,255,255,0.3);padding:9px 14px;cursor:pointer;box-shadow:3px 3px 0 rgba(0,0,0,0.5);}
@@ -607,13 +609,14 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
   <div class="go-compare" id="go-compare"></div>
   <div class="lb-wrap" id="leaderboard-display"></div>
   <div class="name-entry" id="name-entry">
-    <input class="name-input" id="name-input" maxlength="10" placeholder="YOUR NAME"/>
+    <input class="name-input" id="name-input" maxlength="32" placeholder="YOUR NAME"/>
     <button class="name-submit" onclick="submitScore()">ENTER</button>
   </div>
   <div class="go-actions">
     <button class="go-btn primary" onclick="restartGame()">▶ PLAY AGAIN</button>
     <button class="go-btn secondary" onclick="goToAttract()">◀ MENU</button>
   </div>
+  <div class="go-hint" id="go-hint">NEXT PLAYER, GET READY<span>▶ PRESS SPACE FOR THE MAIN SCREEN ◀</span></div>
   <div class="qr-section"><div class="qr-lbl">PROTECT YOUR REAL CODE</div><div class="qr-url">SNYK.IO</div></div>
 </div>
 
@@ -1860,7 +1863,7 @@ updateAttract();
 SFX.initBtn();
 
 // App version (MAJOR.MINOR.YYYYMMDDHHMM in PST) — keep in sync with package.json.
-var APP_VERSION='1.1.202607312221';
+var APP_VERSION='1.2.202608041608';
 {var _v=document.getElementById('app-version');if(_v)_v.textContent='v'+APP_VERSION;}
 
 // Keyboard: ↑/↓ move between the attract-screen buttons, Enter activates.
@@ -1899,6 +1902,7 @@ fitViewport();
     if(!goVisible())return;
     if(e.target&&e.target.id==='name-input'){if(e.key==='Enter'){e.preventDefault();submitScore();}return;}
     if(e.target&&e.target.tagName==='INPUT')return;
+    if(e.key===' '||e.code==='Space'){e.preventDefault();goToAttract();return;}   // any-key-to-main: Space returns to the attract screen
     if(e.key!=='ArrowUp'&&e.key!=='ArrowDown'&&e.key!=='Enter')return;
     var items=[].slice.call(document.querySelectorAll('#game-over .go-btn')).filter(function(el){return getComputedStyle(el).display!=='none';});
     if(!items.length)return;

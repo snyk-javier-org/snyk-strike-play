@@ -54,7 +54,7 @@ html,body{width:100%;height:100%;background:#000;overflow:hidden;font-family:'Pr
 @keyframes kick{50%{opacity:.62;}}
 .kicker .ar{color:var(--orange);}
 .live{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--text-dim);letter-spacing:2px;}
-.today-stats{margin-top:16px;font-size:15px;letter-spacing:1px;color:var(--cyan);text-shadow:0 0 10px rgba(0,255,255,.4);}
+.today-stats{margin-top:16px;font-size:20px;letter-spacing:1px;color:var(--cyan);text-shadow:0 0 10px rgba(0,255,255,.4);}
 .live .dot{width:12px;height:12px;border-radius:50%;background:var(--green);box-shadow:0 0 12px var(--green);animation:blink 1.4s ease-in-out infinite;}
 @keyframes blink{50%{opacity:.25;}}
 
@@ -102,7 +102,7 @@ html,body{width:100%;height:100%;background:#000;overflow:hidden;font-family:'Pr
 @keyframes rflash{0%{opacity:0;transform:translate(-50%,-50%) scale(.85);}12%{opacity:1;transform:translate(-50%,-50%) scale(1);}75%{opacity:1;}100%{opacity:0;}}
 /* ══ THREE-BOARD DASHBOARD (today / this week / all-time) ══ */
 .banner{align-items:stretch;gap:24px;padding:20px 34px;}
-.col-brand{flex:0 0 330px;}
+.col-brand{flex:0 0 250px;}
 .col-brand .logo-title{font-size:46px;}
 .dash{flex:1 1 0;min-width:0;display:flex;flex-direction:column;justify-content:flex-start;
   align-self:stretch;border-left:3px solid var(--border2);padding:14px 0 14px 26px;overflow:hidden;}
@@ -118,14 +118,14 @@ html,body{width:100%;height:100%;background:#000;overflow:hidden;font-family:'Pr
 .crown-week path,.crown-week rect{fill:var(--silver);}
 .crown-day path,.crown-day rect{fill:var(--bronze);}
 .champ{position:relative;margin-bottom:12px;}
-.champ-name{font-family:'Press Start 2P',monospace;white-space:nowrap;line-height:1.1;
-  display:inline-block;max-width:100%;
+.champ-name{font-family:'Press Start 2P',monospace;white-space:normal;overflow-wrap:anywhere;line-height:1.18;
+  display:block;max-width:100%;
   color:var(--cyan);text-shadow:3px 3px 0 var(--purple),0 0 18px rgba(0,255,255,.5);}
 .dash-week .champ-name{color:var(--silver);text-shadow:3px 3px 0 var(--purple),0 0 18px rgba(199,206,224,.4);}
 .dash-day .champ-name{color:var(--green);text-shadow:3px 3px 0 var(--purple),0 0 18px rgba(57,255,20,.5);}
 .dash-all .champ-name{color:var(--orange);text-shadow:4px 4px 0 var(--purple),0 0 22px rgba(255,107,53,.6);}
 .flashon .champ-name{animation:namehit .7s ease-out;}
-.champ-stats{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:24px;
+.champ-stats{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:28px;
   color:var(--text);margin-top:10px;letter-spacing:1px;}
 .champ-stats .u,.champ-stats .lbl{font-family:'Press Start 2P',monospace;font-size:11px;margin-left:4px;}
 .champ-stats .u{color:var(--yellow);}
@@ -135,17 +135,17 @@ html,body{width:100%;height:100%;background:#000;overflow:hidden;font-family:'Pr
 .rows{display:flex;flex-direction:column;gap:6px;overflow:hidden;}
 .lrow{display:flex;align-items:center;gap:12px;padding:6px 12px;
   border:2px solid var(--border);background:rgba(13,13,58,.5);}
-.lrow .rk{font-family:'Press Start 2P',monospace;font-size:15px;width:30px;color:var(--text-dim);}
+.lrow .rk{font-family:'Press Start 2P',monospace;font-size:20px;width:36px;color:var(--text-dim);}
 .lrow.silver .rk{color:var(--silver);}
 .lrow.bronze .rk{color:var(--bronze);}
-.lrow .nm{font-family:'Press Start 2P',monospace;font-size:14px;color:var(--text);
+.lrow .nm{font-family:'Press Start 2P',monospace;font-size:20px;color:var(--text);
   flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.lrow .sc{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:18px;color:var(--gold);}
+.lrow .sc{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:24px;color:var(--gold);}
 .lrow .vl{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--cyan);width:42px;text-align:right;}
 .rows-empty{font-family:'JetBrains Mono',monospace;font-size:15px;color:var(--text-dim);padding:10px 4px;}
 .dash-day .lrow{padding:4px 12px;}
-.dash-day .lrow .nm{font-size:12px;}
-.dash-day .lrow .sc{font-size:15px;}
+.dash-day .lrow .nm{font-size:16px;}
+.dash-day .lrow .sc{font-size:19px;}
 /* back-to-game link (outside the scaled stage) */
 #back-to-game{position:fixed;left:18px;bottom:14px;z-index:50;
   font-family:'Press Start 2P',monospace;font-size:12px;letter-spacing:1px;
@@ -217,11 +217,10 @@ function load(){try{var s=localStorage.getItem(KEY);return s?JSON.parse(s):[];}c
 function esc(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function nf(n){return (typeof n==='number'?n:0).toLocaleString();}
 
-// shrink a champion name until it fits its panel
+// Set the champion-name size. Names wrap (CSS) rather than shrink, so they stay
+// big and readable on a large screen even for long (up to 32-char) names.
 function fitName(el,startPx){
   el.style.fontSize=startPx+'px';
-  var max=el.parentElement.clientWidth-14,size=startPx;
-  while(el.scrollWidth>max && size>16){size-=2;el.style.fontSize=size+'px';}
 }
 
 // ── Pacific-time (America/Los_Angeles) day/week boundaries ──
@@ -309,11 +308,11 @@ function render(data,quiet){
   // All-time keeps the #hero-* / #board-rows contract (top 5).
   fillPanel({wrap:'hero',name:'hero-name',score:'hero-score',vulns:'hero-vulns',sub:'hero-sub',
     rows:'board-rows',emptyName:'READY?',empty:'No scores yet — play to get on the board',
-    max:5,flag:!quiet,startPx:46}, data.alltime||[]);
+    max:5,flag:!quiet,startPx:52}, data.alltime||[]);
   fillPanel({wrap:'week',name:'week-name',score:'week-score',vulns:'week-vulns',
-    rows:'week-rows',emptyName:'—',empty:'No scores this week yet',max:5,startPx:34}, data.weekly||[]);
+    rows:'week-rows',emptyName:'—',empty:'No scores this week yet',max:5,startPx:44}, data.weekly||[]);
   fillPanel({wrap:'day',name:'day-name',score:'day-score',vulns:'day-vulns',
-    rows:'day-rows',emptyName:'—',empty:'No scores today yet',max:10,startPx:30}, data.daily||[]);
+    rows:'day-rows',emptyName:'—',empty:'No scores today yet',max:10,startPx:38}, data.daily||[]);
   var ts=document.getElementById('today-stats'), t=data.today||{count:0,avg:0};
   if(ts) ts.textContent = t.count ? (t.count+' PLAYED TODAY · AVG '+nf(t.avg)) : 'BE THE FIRST TO PLAY TODAY';
   first=false;
