@@ -282,10 +282,12 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .go-prize{margin:4px 0 8px;font-size:16px;color:var(--yellow);letter-spacing:1px;text-shadow:0 0 10px rgba(255,224,0,0.5);}
 .go-hint{margin-top:14px;font-size:22px;color:var(--green);letter-spacing:2px;text-shadow:0 0 12px rgba(57,255,20,0.6);animation:blink 1.1s step-end infinite;}
 .go-hint span{display:block;margin-top:8px;font-size:15px;color:var(--text-dim);letter-spacing:1px;text-shadow:none;animation:none;}
-.lb-wrap{width:340px;}
+.lb-wrap{width:760px;max-width:92vw;}
+.lb-cols{column-count:2;column-gap:40px;}
+.lb-cols .lb-row{break-inside:avoid;}
 .lb-heading{font-size:18px;color:var(--yellow);text-align:center;margin-bottom:10px;letter-spacing:2px;text-shadow:2px 2px 0 #AA9000;}
 .lb-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:2px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:20px;}
-.lb-rank{width:18px;color:var(--text-dim);text-align:right;font-family:'Press Start 2P';font-size:17px;}
+.lb-rank{width:34px;color:var(--text-dim);text-align:right;font-family:'Press Start 2P';font-size:17px;flex-shrink:0;}
 .lb-rank.gold{color:var(--yellow);text-shadow:0 0 8px var(--yellow);}
 .lb-rank.silver{color:#C0C0C0;}
 .lb-rank.bronze{color:#CD7F32;}
@@ -1620,9 +1622,9 @@ function renderLeaderboard(list){
   const wrap=document.getElementById('leaderboard-display');
   if(!lb.length){wrap.innerHTML='<div class="lb-heading">NO SCORES YET</div>';return;}
   const rankCls=['gold','silver','bronze'];
-  wrap.innerHTML='<div class="lb-heading">TODAY’S TOP 10</div>'+lb.slice(0,10).map((e,i)=>
+  wrap.innerHTML='<div class="lb-heading">TODAY’S TOP 10</div><div class="lb-cols">'+lb.slice(0,10).map((e,i)=>
     '<div class="lb-row"><div class="lb-rank '+( rankCls[i]||'')+'">'+(i+1)+'</div><div class="lb-name">'+escapeHtml(e.name)+'</div><div class="lb-score">'+e.score.toLocaleString()+'</div><div class="lb-vulns">'+e.vulns+'v</div></div>'
-  ).join('');
+  ).join('')+'</div>';
 }
 
 function loadLeaderboard(){try{const s=localStorage.getItem('snyk_lb');return s?JSON.parse(s):[];}catch{return [];}}
@@ -1878,7 +1880,7 @@ updateAttract();
 SFX.initBtn();
 
 // App version (MAJOR.MINOR.YYYYMMDDHHMM in PST) — keep in sync with package.json.
-var APP_VERSION='1.3.202608051012';
+var APP_VERSION='1.3.202608051025';
 {var _v=document.getElementById('app-version');if(_v)_v.textContent='v'+APP_VERSION;}
 
 // Keyboard: ↑/↓ move between the attract-screen buttons, Enter activates.
