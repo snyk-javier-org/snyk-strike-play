@@ -425,7 +425,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
       <div class="tut-step" id="tut-2">
         <span class="tut-icon">🧩</span>
         <div class="tut-title">THE TETRIS BLOCK IS YOUR TIMER</div>
-        <div class="tut-text">A Tetris block falls on the right. <strong>If it hits the bottom — the exploit fires.</strong><br>Fix the code on the left before it lands.</div>
+        <div class="tut-text">A Tetris block falls on the right. <strong>If you let it land, you LOSE A LIFE</strong> — and lives never come back, so play fast!<br>Fix the code on the left before it lands.</div>
         <div class="tut-mechanic">
           <div class="tut-mech-step s1">
             <span class="tut-mech-num">①</span>
@@ -439,7 +439,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
           </div>
         </div>
         <div class="tut-text">⌨️ <strong>Keyboard:</strong> press <strong>↑ ↓</strong> to move between choices and <strong>Enter</strong> to pick — for both finding the vuln and choosing the fix.</div>
-        <div class="tut-text">Complete both steps before the block lands. Board fills over rounds — just like real Tetris.</div>
+        <div class="tut-text">Complete both steps before the block lands — a landed block costs a life. Board fills over rounds, just like real Tetris.</div>
       </div>
       <div class="tut-step" id="tut-3">
         <span class="tut-icon">🌡️</span>
@@ -622,8 +622,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
     <button class="name-submit" onclick="submitScore()">ENTER</button>
   </div>
   <div class="go-actions">
-    <button class="go-btn primary" onclick="restartGame()">▶ PLAY AGAIN</button>
-    <button class="go-btn secondary" onclick="goToAttract()">◀ MENU</button>
+    <button class="go-btn primary" onclick="goToAttract()">◀ MAIN MENU</button>
   </div>
   <div class="go-hint" id="go-hint">NEXT PLAYER, GET READY<span>▶ PRESS SPACE FOR THE MAIN SCREEN ◀</span></div>
   <div class="qr-section"><div class="qr-lbl">PROTECT YOUR REAL CODE</div><div class="qr-url">SNYK.IO</div></div>
@@ -1023,11 +1022,18 @@ function tetrisLoop(ts){
         landPiece(p);
         if(state.gameActive){
           state.gameActive=false;
-          flash('#FF2050',0.22);
-          document.getElementById('game').classList.add('screen-shake');
-          setTimeout(()=>document.getElementById('game').classList.remove('screen-shake'),400);
+          state.streak=0;
+          state.lives=Math.max(0,(state.lives||0)-1);   // letting the block land costs a life
+          updateMistakeUI(); updateScore();
           document.getElementById('fix-panel').classList.remove('open');
-          setTimeout(()=>showRoundResult(false),600);
+          if(state.lives<=0){ loseGame('lives'); }
+          else {
+            flash('#FF2050',0.22);
+            document.getElementById('game').classList.add('screen-shake');
+            setTimeout(()=>document.getElementById('game').classList.remove('screen-shake'),400);
+            showToast('TOO SLOW — BLOCK LANDED · '+state.lives+' '+(state.lives===1?'LIFE':'LIVES')+' LEFT','bad',2200);
+            setTimeout(()=>showRoundResult(false),600);
+          }
         }
       }
     }
@@ -1397,7 +1403,6 @@ function applyFix(fixIdx){
     const finishRound=()=>{
       document.getElementById('fix-panel').classList.remove('open');
       state.streak++;
-      if(state.streak>0 && state.streak%5===0 && state.lives<state.livesCap){ state.lives=Math.min(state.lives+1,state.livesCap); updateMistakeUI(); lifeGainFX(); }
       if(state.streak>1){const sb=state.streak*100;state.roundXPItems.push({label:'Streak x'+state.streak,xp:sb});}
       if(state.streak===3){state.powerups.scan++;updatePowerupUI();powerupReadyFX('scan','SCAN BOOST');}
       if(state.streak===5){state.powerups.freeze++;updatePowerupUI();powerupReadyFX('freeze','BLOCK FREEZE');}
@@ -1492,7 +1497,7 @@ function showRoundResult(success){
 function levelConfig(level){
   const disp=level+1;
   const name=LEVELS[level % LEVELS.length].name;
-  let dropMs=Math.max(260, 900 - disp*32)*2;   // 2x slower — more time to read the question
+  let dropMs=Math.max(260, 900 - disp*32)*1.6;   // faster pace (25% quicker fall) to keep the queue moving
   if(practiceMode) dropMs*=1.2;                 // practice a touch slower still, for beginners
   dropMs=Math.round(dropMs);
   const vulnCount = disp<=4 ? 1 : (disp<=9 ? 2 : 3);
@@ -1533,7 +1538,7 @@ function loseLife(msg){
   flash('#FF2050',0.10);
   const g=document.getElementById('game'); g.classList.add('screen-shake'); setTimeout(()=>g.classList.remove('screen-shake'),300);
   if(state.lives<=0){ loseGame('lives'); return; }
-  showToast(msg+' — '+state.lives+' LIFE'+(state.lives===1?'':'S')+' LEFT','bad',1800);
+  showToast(msg+' — '+state.lives+' '+(state.lives===1?'LIFE':'LIVES')+' LEFT','bad',1800);
 }
 function loseGame(reason){
   if(state.toppedOut)return;
@@ -1553,15 +1558,10 @@ function nextRound(){
   state.level=state.round;                       // 1 level per round, endless
   const disp=state.level+1;
   state.livesCap = disp>16 ? 10 : 5;             // 5 lives for levels 1-16, 10 after
-  if(!practiceMode){
-    if(disp%8===0){                                // refill at every 8-level milestone
-      state.lives=state.livesCap;
-      levelNotice('⬆ LEVEL '+disp+' — LIVES REFILLED', state.livesCap+' LIVES RESTORED','#39FF14');
-      SFX.level();
-    } else if(levelConfig(state.level).vulnCount>prevVuln){
-      levelNotice('⬆ LEVEL '+disp, levelConfig(state.level).vulnCount+' VULNS PER WAVE · FASTER','#FF6B35');
-      SFX.level();
-    }
+  // No life refills — lives never come back, keeping games short.
+  if(!practiceMode && levelConfig(state.level).vulnCount>prevVuln){
+    levelNotice('⬆ LEVEL '+disp, levelConfig(state.level).vulnCount+' VULNS PER WAVE · FASTER','#FF6B35');
+    SFX.level();
   }
   if(state.lives>state.livesCap) state.lives=state.livesCap;
   updateScore();
@@ -1601,7 +1601,7 @@ function gameOver(){
     const gc=document.getElementById('go-compare');
     if(practiceMode){ if(gc)gc.style.display='none'; }
     else if(gc){ gc.style.display='block'; showCompare(0); }
-    if(!practiceMode) fetchBoard(function(d){ showCompare((d.today&&d.today.avg)||0); renderLeaderboard(d.alltime); });
+    if(!practiceMode) fetchBoard(function(d){ showCompare((d.today&&d.today.avg)||0); renderLeaderboard(d.daily); });
     // Practice runs never register on the leaderboard.
     document.getElementById('name-entry').style.display=(!practiceMode && state.score>0)?'flex':'none';
     document.getElementById('game-over').style.display='flex';
@@ -1615,7 +1615,7 @@ function renderLeaderboard(list){
   const wrap=document.getElementById('leaderboard-display');
   if(!lb.length){wrap.innerHTML='<div class="lb-heading">NO SCORES YET</div>';return;}
   const rankCls=['gold','silver','bronze'];
-  wrap.innerHTML='<div class="lb-heading">HIGH SCORES</div>'+lb.slice(0,7).map((e,i)=>
+  wrap.innerHTML='<div class="lb-heading">TODAY’S TOP 10</div>'+lb.slice(0,10).map((e,i)=>
     '<div class="lb-row"><div class="lb-rank '+( rankCls[i]||'')+'">'+(i+1)+'</div><div class="lb-name">'+escapeHtml(e.name)+'</div><div class="lb-score">'+e.score.toLocaleString()+'</div><div class="lb-vulns">'+e.vulns+'v</div></div>'
   ).join('');
 }
@@ -1686,7 +1686,7 @@ function submitScore(){
   saveLeaderboard(lb);
   // Submit to the global board, then refresh from it.
   fetch(LB_API+'/api/scores',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,score,vulns})})
-    .then(function(){ fetchBoard(function(d){ renderLeaderboard(d.alltime); }); }).catch(function(){});
+    .then(function(){ fetchBoard(function(d){ renderLeaderboard(d.daily); }); }).catch(function(){});
   SFX.submit();
   document.getElementById('name-entry').style.display='none';
   renderLeaderboard();updateAttract();
@@ -1873,7 +1873,7 @@ updateAttract();
 SFX.initBtn();
 
 // App version (MAJOR.MINOR.YYYYMMDDHHMM in PST) — keep in sync with package.json.
-var APP_VERSION='1.2.202608041826';
+var APP_VERSION='1.3.202608042224';
 {var _v=document.getElementById('app-version');if(_v)_v.textContent='v'+APP_VERSION;}
 
 // Keyboard: ↑/↓ move between the attract-screen buttons, Enter activates.
