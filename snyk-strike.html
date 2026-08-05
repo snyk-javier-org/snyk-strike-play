@@ -291,7 +291,9 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .lb-name{flex:1;color:var(--text);letter-spacing:1px;}
 .lb-score{color:var(--orange);font-weight:700;}
 .lb-vulns{font-size:18px;color:var(--text-dim);}
-.name-entry{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:7px 0;}
+.name-entry{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:10px;margin:7px 0;}
+.name-field{display:flex;flex-direction:column;align-items:flex-start;gap:5px;}
+.name-label{font-family:'Press Start 2P',monospace;font-size:13px;color:var(--cyan);letter-spacing:1px;text-shadow:0 0 8px rgba(0,255,255,0.4);}
 .name-input{font-family:'Press Start 2P',monospace;font-size:18px;background:var(--bg3);border:3px solid var(--orange);color:var(--yellow);padding:9px 12px;width:300px;max-width:42vw;letter-spacing:1px;text-transform:uppercase;box-shadow:3px 3px 0 rgba(255,107,53,0.3);}
 .name-input:focus{outline:none;box-shadow:3px 3px 0 var(--orange);}
 .name-input::placeholder{color:var(--text-dim);}
@@ -609,8 +611,14 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
   <div class="go-compare" id="go-compare"></div>
   <div class="lb-wrap" id="leaderboard-display"></div>
   <div class="name-entry" id="name-entry">
-    <input class="name-input" id="name-first" maxlength="16" placeholder="FIRST NAME" autocomplete="off"/>
-    <input class="name-input" id="name-last" maxlength="16" placeholder="LAST NAME" autocomplete="off"/>
+    <div class="name-field">
+      <label class="name-label" for="name-first">FIRST NAME</label>
+      <input class="name-input" id="name-first" maxlength="16" placeholder="e.g. JAVIER" autocomplete="off"/>
+    </div>
+    <div class="name-field">
+      <label class="name-label" for="name-last">LAST NAME</label>
+      <input class="name-input" id="name-last" maxlength="16" placeholder="e.g. GARZA" autocomplete="off"/>
+    </div>
     <button class="name-submit" onclick="submitScore()">ENTER</button>
   </div>
   <div class="go-actions">
@@ -1865,7 +1873,7 @@ updateAttract();
 SFX.initBtn();
 
 // App version (MAJOR.MINOR.YYYYMMDDHHMM in PST) — keep in sync with package.json.
-var APP_VERSION='1.2.202608041818';
+var APP_VERSION='1.2.202608041826';
 {var _v=document.getElementById('app-version');if(_v)_v.textContent='v'+APP_VERSION;}
 
 // Keyboard: ↑/↓ move between the attract-screen buttons, Enter activates.
