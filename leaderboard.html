@@ -69,8 +69,9 @@ html,body{width:100%;height:100%;background:#000;overflow:hidden;font-family:'Pr
 .hs-score .u{font-family:'Press Start 2P',monospace;font-size:22px;color:var(--yellow);margin-left:12px;letter-spacing:2px;}
 .hs-vulns{font-weight:700;font-size:30px;color:var(--cyan);text-shadow:0 0 14px rgba(0,255,255,.5);}
 .hs-vulns .lbl{font-family:'Press Start 2P',monospace;font-size:15px;color:var(--green);margin-left:8px;}
-.newflag{position:absolute;top:-6px;font-family:'Press Start 2P',monospace;font-size:18px;color:var(--magenta);letter-spacing:3px;
+.newflag{position:absolute;top:0;left:0;font-family:'Press Start 2P',monospace;font-size:16px;color:var(--magenta);letter-spacing:3px;
   text-shadow:0 0 16px rgba(224,64,251,.9);opacity:0;}
+.dash-all .champ{padding-top:26px;}
 .flashon .newflag{animation:newpop 2.2s ease-out;}
 .flashon .hero-name{animation:namehit .7s ease-out;}
 @keyframes newpop{0%{opacity:0;transform:translateY(10px) scale(.8);}12%{opacity:1;transform:translateY(0) scale(1);}80%{opacity:1;}100%{opacity:0;}}
@@ -180,14 +181,6 @@ html,body{width:100%;height:100%;background:#000;overflow:hidden;font-family:'Pr
       <div class="rows" id="day-rows"></div>
     </div>
 
-    <div class="dash dash-week" id="week">
-      <div class="dash-head"><svg class="crown crown-week" viewBox="0 0 120 88" aria-hidden="true"><path d="M6 72 L20 24 L46 50 L60 16 L74 50 L100 24 L114 72 Z"/><rect x="6" y="72" width="108" height="14"/></svg><span class="dash-title">THIS WEEK</span></div>
-      <div class="champ">
-        <div class="champ-name" id="week-name">&#8212;</div>
-        <div class="champ-stats"><span id="week-score">0</span><span class="u">PTS</span><span class="dot2">&#183;</span><span id="week-vulns">0</span><span class="lbl">VULNS</span></div>
-      </div>
-      <div class="rows" id="week-rows"></div>
-    </div>
 
     <div class="dash dash-all empty" id="hero">
       <div class="dash-head"><svg class="crown crown-all" viewBox="0 0 120 88" aria-hidden="true"><path d="M6 72 L20 24 L46 50 L60 16 L74 50 L100 24 L114 72 Z"/><rect x="6" y="72" width="108" height="14"/></svg><span class="dash-title">ALL-TIME</span></div>
@@ -308,11 +301,9 @@ function render(data,quiet){
   // All-time keeps the #hero-* / #board-rows contract (top 5).
   fillPanel({wrap:'hero',name:'hero-name',score:'hero-score',vulns:'hero-vulns',sub:'hero-sub',
     rows:'board-rows',emptyName:'READY?',empty:'No scores yet — play to get on the board',
-    max:5,flag:!quiet,startPx:52}, data.alltime||[]);
-  fillPanel({wrap:'week',name:'week-name',score:'week-score',vulns:'week-vulns',
-    rows:'week-rows',emptyName:'—',empty:'No scores this week yet',max:5,startPx:44}, data.weekly||[]);
+    max:6,flag:!quiet,startPx:56}, data.alltime||[]);
   fillPanel({wrap:'day',name:'day-name',score:'day-score',vulns:'day-vulns',
-    rows:'day-rows',emptyName:'—',empty:'No scores today yet',max:10,startPx:38}, data.daily||[]);
+    rows:'day-rows',emptyName:'—',empty:'No scores today yet',max:12,startPx:56}, data.daily||[]);
   var ts=document.getElementById('today-stats'), t=data.today||{count:0,avg:0};
   if(ts) ts.textContent = t.count ? (t.count+' PLAYED TODAY · AVG '+nf(t.avg)) : 'BE THE FIRST TO PLAY TODAY';
   first=false;
