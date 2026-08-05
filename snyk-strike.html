@@ -1602,6 +1602,9 @@ function gameOver(){
     if(practiceMode){ if(gc)gc.style.display='none'; }
     else if(gc){ gc.style.display='block'; showCompare(0); }
     if(!practiceMode) fetchBoard(function(d){ showCompare((d.today&&d.today.avg)||0); renderLeaderboard(d.daily); });
+    // Always start the name fields blank for the next player.
+    document.getElementById('name-first').value='';
+    document.getElementById('name-last').value='';
     // Practice runs never register on the leaderboard.
     document.getElementById('name-entry').style.display=(!practiceMode && state.score>0)?'flex':'none';
     document.getElementById('game-over').style.display='flex';
@@ -1873,7 +1876,7 @@ updateAttract();
 SFX.initBtn();
 
 // App version (MAJOR.MINOR.YYYYMMDDHHMM in PST) — keep in sync with package.json.
-var APP_VERSION='1.3.202608050936';
+var APP_VERSION='1.3.202608051001';
 {var _v=document.getElementById('app-version');if(_v)_v.textContent='v'+APP_VERSION;}
 
 // Keyboard: ↑/↓ move between the attract-screen buttons, Enter activates.
