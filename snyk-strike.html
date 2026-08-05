@@ -291,8 +291,8 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .lb-name{flex:1;color:var(--text);letter-spacing:1px;}
 .lb-score{color:var(--orange);font-weight:700;}
 .lb-vulns{font-size:18px;color:var(--text-dim);}
-.name-entry{display:flex;gap:8px;margin:7px 0;}
-.name-input{font-family:'Press Start 2P',monospace;font-size:18px;background:var(--bg3);border:3px solid var(--orange);color:var(--yellow);padding:9px 12px;width:460px;max-width:80vw;letter-spacing:1px;text-transform:uppercase;box-shadow:3px 3px 0 rgba(255,107,53,0.3);}
+.name-entry{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:7px 0;}
+.name-input{font-family:'Press Start 2P',monospace;font-size:18px;background:var(--bg3);border:3px solid var(--orange);color:var(--yellow);padding:9px 12px;width:300px;max-width:42vw;letter-spacing:1px;text-transform:uppercase;box-shadow:3px 3px 0 rgba(255,107,53,0.3);}
 .name-input:focus{outline:none;box-shadow:3px 3px 0 var(--orange);}
 .name-input::placeholder{color:var(--text-dim);}
 .name-submit{font-family:'Press Start 2P',monospace;font-size:18px;background:var(--orange);color:#000;border:3px solid rgba(255,255,255,0.3);padding:9px 14px;cursor:pointer;box-shadow:3px 3px 0 rgba(0,0,0,0.5);}
@@ -609,7 +609,8 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
   <div class="go-compare" id="go-compare"></div>
   <div class="lb-wrap" id="leaderboard-display"></div>
   <div class="name-entry" id="name-entry">
-    <input class="name-input" id="name-input" maxlength="32" placeholder="YOUR NAME"/>
+    <input class="name-input" id="name-first" maxlength="16" placeholder="FIRST NAME" autocomplete="off"/>
+    <input class="name-input" id="name-last" maxlength="16" placeholder="LAST NAME" autocomplete="off"/>
     <button class="name-submit" onclick="submitScore()">ENTER</button>
   </div>
   <div class="go-actions">
@@ -1668,7 +1669,8 @@ function updateAttract(){
 
 function submitScore(){
   if(practiceMode)return;   // practice runs never register on the leaderboard
-  const name=document.getElementById('name-input').value.trim().toUpperCase()||'ANON';
+  const first=document.getElementById('name-first').value, last=document.getElementById('name-last').value;
+  const name=(first+' '+last).trim().toUpperCase()||'ANON';
   const vulns=state.vulnsFixed, score=state.score;
   const lb=loadLeaderboard();
   lb.push({name,score,vulns,date:Date.now()});
@@ -1863,7 +1865,7 @@ updateAttract();
 SFX.initBtn();
 
 // App version (MAJOR.MINOR.YYYYMMDDHHMM in PST) — keep in sync with package.json.
-var APP_VERSION='1.2.202608041658';
+var APP_VERSION='1.2.202608041818';
 {var _v=document.getElementById('app-version');if(_v)_v.textContent='v'+APP_VERSION;}
 
 // Keyboard: ↑/↓ move between the attract-screen buttons, Enter activates.
@@ -1900,8 +1902,7 @@ fitViewport();
   function goVisible(){var el=document.getElementById('game-over');return el&&getComputedStyle(el).display!=='none';}
   document.addEventListener('keydown',function(e){
     if(!goVisible())return;
-    if(e.target&&e.target.id==='name-input'){if(e.key==='Enter'){e.preventDefault();submitScore();}return;}
-    if(e.target&&e.target.tagName==='INPUT')return;
+    if(e.target&&e.target.tagName==='INPUT'){if(e.key==='Enter'){e.preventDefault();submitScore();}return;}
     if(e.key===' '||e.code==='Space'){e.preventDefault();goToAttract();return;}   // any-key-to-main: Space returns to the attract screen
     if(e.key!=='ArrowUp'&&e.key!=='ArrowDown'&&e.key!=='Enter')return;
     var items=[].slice.call(document.querySelectorAll('#game-over .go-btn')).filter(function(el){return getComputedStyle(el).display!=='none';});
