@@ -361,6 +361,76 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 </head>
 <body>
 
+<!-- ACCESS GATE — kiosk lock. Two ways in: a URL query token, or the access
+     code. Both are validated SERVER-SIDE by the leaderboard API (/api/gate),
+     which holds the secrets as env vars (GATE_CODE / GATE_QUERY) — NOTHING
+     sensitive (not even a hash) is in this page, so inspecting the source reveals
+     neither the code nor the token. The API returns a real 403 on a bad attempt.
+     (The game content itself is still in the page; this only gates walk-up play.) -->
+<style>
+#gate{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 50% 40%,#141428 0%,#05050c 70%,#000 100%);}
+#gate .gate-box{width:min(90vw,440px);text-align:center;padding:38px 34px;border-radius:14px;
+  background:rgba(10,10,24,.92);border:2px solid #16d0ff;box-shadow:0 0 32px rgba(22,208,255,.35),inset 0 0 22px rgba(255,0,200,.08);}
+#gate .gate-logo{margin-bottom:18px;line-height:1.35;}
+#gate .gate-403{font-family:'Press Start 2P',monospace;font-size:22px;letter-spacing:3px;color:#ff3b6b;
+  text-shadow:0 0 14px rgba(255,59,107,.6);margin-bottom:8px;}
+#gate .gate-label{font-family:'Press Start 2P',monospace;font-size:11px;letter-spacing:2px;color:#16d0ff;margin-bottom:16px;line-height:1.6;}
+#gate #gate-input{width:100%;box-sizing:border-box;padding:14px 16px;font-family:'Press Start 2P',monospace;font-size:16px;
+  text-align:center;letter-spacing:4px;color:#fff;background:#05050c;border:2px solid #ff2fd0;border-radius:8px;outline:none;}
+#gate #gate-input:focus{border-color:#16d0ff;box-shadow:0 0 14px rgba(22,208,255,.5);}
+#gate #gate-btn{margin-top:16px;width:100%;padding:14px;font-family:'Press Start 2P',monospace;font-size:14px;letter-spacing:2px;
+  color:#05050c;background:#16d0ff;border:none;border-radius:8px;cursor:pointer;text-shadow:none;}
+#gate #gate-btn:hover{background:#3fe0ff;}
+#gate .gate-err{min-height:18px;margin-top:14px;font-family:'Press Start 2P',monospace;font-size:11px;letter-spacing:2px;color:#ff3b6b;}
+</style>
+<div id="gate">
+  <div class="gate-box">
+    <div class="gate-logo">
+      <span class="logo-snyk">⚡ SNYK PRESENTS</span><br>
+      <span class="logo-title">SNYK<span class="strike"> STRIKE</span></span>
+    </div>
+    <div class="gate-403">403 · FORBIDDEN</div>
+    <div class="gate-label">ACCESS RESTRICTED<br>ENTER ACCESS CODE TO CONTINUE</div>
+    <input id="gate-input" type="password" autocomplete="off" spellcheck="false" aria-label="Access code" placeholder="••••••••">
+    <button id="gate-btn" type="button">UNLOCK</button>
+    <div id="gate-err" class="gate-err"></div>
+  </div>
+</div>
+<script>
+(function(){
+  // Same origin as the leaderboard API (the URL is public here; the secrets are not).
+  var API='https://snyk-strike-f7a609bc3cc9.herokuapp.com';
+  var gate=document.getElementById('gate'),input=document.getElementById('gate-input'),
+      btn=document.getElementById('gate-btn'),err=document.getElementById('gate-err');
+  function unlock(){ try{sessionStorage.setItem('snyk_unlocked','1');}catch(e){} gate.style.display='none'; }
+  function focusInput(){ setTimeout(function(){ try{input.focus();}catch(e){} },50); }
+  var already=false; try{already=sessionStorage.getItem('snyk_unlocked')==='1';}catch(e){}
+  if(already){ gate.style.display='none'; return; }
+  // Ask the server whether this code / token is valid — secrets live only there.
+  function check(payload){
+    return fetch(API+'/api/gate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+      .then(function(r){return r.ok;}).catch(function(){return false;});
+  }
+  // Alternate entry: a URL query token (e.g. the event link). We send the query
+  // parameter's key to the server to validate — the token never appears here.
+  var qtoken=''; try{ var it=new URLSearchParams(location.search).keys().next(); if(!it.done) qtoken=it.value; }catch(e){}
+  if(qtoken){ check({token:qtoken}).then(function(ok){ if(ok) unlock(); else focusInput(); }); }
+  else { focusInput(); }
+  function submit(){
+    var v=input.value||''; if(!v)return;
+    btn.disabled=true;
+    check({code:v}).then(function(ok){
+      btn.disabled=false;
+      if(ok){ err.textContent=''; unlock(); }
+      else{ err.textContent='ACCESS DENIED'; input.value=''; input.focus(); }
+    });
+  }
+  btn.addEventListener('click',submit);
+  input.addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); submit(); } });
+})();
+</script>
+
 <!-- ATTRACT CANVAS BG -->
 <div id="viewport">
 <canvas id="attract-canvas"></canvas>
@@ -1891,7 +1961,7 @@ updateAttract();
 SFX.initBtn();
 
 // App version (MAJOR.MINOR.YYYYMMDDHHMM in PST) — keep in sync with package.json.
-var APP_VERSION='1.4.202608061537';
+var APP_VERSION='1.5.202608061556';
 {var _v=document.getElementById('app-version');if(_v)_v.textContent='v'+APP_VERSION;}
 
 // Keyboard: ↑/↓ move between the attract-screen buttons, Enter activates.
