@@ -403,26 +403,35 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
   var API='https://snyk-strike-f7a609bc3cc9.herokuapp.com';
   var gate=document.getElementById('gate'),input=document.getElementById('gate-input'),
       btn=document.getElementById('gate-btn'),err=document.getElementById('gate-err');
-  function unlock(){ try{sessionStorage.setItem('snyk_unlocked','1');}catch(e){} gate.style.display='none'; }
+  // A submit token is valid only until its embedded expiry (`<expiryMs>.<sig>`).
+  function tokenLive(t){ if(!t)return false; var e=Number(String(t).split('.')[0]); return isFinite(e)&&Date.now()<e; }
+  function unlock(data){
+    try{ sessionStorage.setItem('snyk_unlocked','1'); if(data&&data.submitToken) sessionStorage.setItem('snyk_submit',data.submitToken); }catch(e){}
+    gate.style.display='none';
+  }
   function focusInput(){ setTimeout(function(){ try{input.focus();}catch(e){} },50); }
-  var already=false; try{already=sessionStorage.getItem('snyk_unlocked')==='1';}catch(e){}
-  if(already){ gate.style.display='none'; return; }
+  var already=false,tok=''; try{ already=sessionStorage.getItem('snyk_unlocked')==='1'; tok=sessionStorage.getItem('snyk_submit')||''; }catch(e){}
+  // Stay unlocked only while we still hold a live submit token; otherwise re-gate
+  // (re-entering the code / query link re-issues one).
+  if(already&&tokenLive(tok)){ gate.style.display='none'; return; }
   // Ask the server whether this code / token is valid — secrets live only there.
+  // A successful response carries a short-lived submit token for POST /api/scores.
   function check(payload){
     return fetch(API+'/api/gate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
-      .then(function(r){return r.ok;}).catch(function(){return false;});
+      .then(function(r){ return r.ok ? r.json().catch(function(){return {ok:true};}) : null; })
+      .catch(function(){ return null; });
   }
   // Alternate entry: a URL query token (e.g. the event link). We send the query
   // parameter's key to the server to validate — the token never appears here.
   var qtoken=''; try{ var it=new URLSearchParams(location.search).keys().next(); if(!it.done) qtoken=it.value; }catch(e){}
-  if(qtoken){ check({token:qtoken}).then(function(ok){ if(ok) unlock(); else focusInput(); }); }
+  if(qtoken){ check({token:qtoken}).then(function(d){ if(d) unlock(d); else focusInput(); }); }
   else { focusInput(); }
   function submit(){
     var v=input.value||''; if(!v)return;
     btn.disabled=true;
-    check({code:v}).then(function(ok){
+    check({code:v}).then(function(d){
       btn.disabled=false;
-      if(ok){ err.textContent=''; unlock(); }
+      if(d){ err.textContent=''; unlock(d); }
       else{ err.textContent='ACCESS DENIED'; input.value=''; input.focus(); }
     });
   }
@@ -1772,8 +1781,9 @@ function submitScore(){
   lb.push({name,score,vulns,date:Date.now()});
   lb.sort((a,b)=>b.score-a.score);lb.splice(500);   // local cache / offline fallback
   saveLeaderboard(lb);
-  // Submit to the global board, then refresh from it.
-  fetch(LB_API+'/api/scores',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,score,vulns})})
+  // Submit to the global board (with the gate-issued submit token), then refresh.
+  var submitToken=''; try{ submitToken=sessionStorage.getItem('snyk_submit')||''; }catch(e){}
+  fetch(LB_API+'/api/scores',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,score,vulns,submitToken})})
     .then(function(){ fetchBoard(function(d){ renderLeaderboard(d.daily); }); }).catch(function(){});
   SFX.submit();
   document.getElementById('name-entry').style.display='none';
@@ -1961,7 +1971,7 @@ updateAttract();
 SFX.initBtn();
 
 // App version (MAJOR.MINOR.YYYYMMDDHHMM in PST) — keep in sync with package.json.
-var APP_VERSION='1.5.202608061556';
+var APP_VERSION='1.6.202608072159';
 {var _v=document.getElementById('app-version');if(_v)_v.textContent='v'+APP_VERSION;}
 
 // Keyboard: ↑/↓ move between the attract-screen buttons, Enter activates.
